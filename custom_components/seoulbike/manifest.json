@@ -8,6 +8,7 @@
   "platforms": ["sensor"],
   "codeowners": ["@s1len7"],
   "requirements": [
+    "aiohttp",
     "haversine>=2.8.0"
   ]
 }

@@ -1,4 +1,4 @@
-"""Seoul Bike integration."""
+"""Seoul Bike."""
 
 from __future__ import annotations
 
@@ -12,18 +12,18 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry):
-    seoul_api_key = entry.data[CONF_SEOUL_API_KEY]
+    api_key = entry.data[CONF_SEOUL_API_KEY]
 
-    latitude = hass.config.latitude
-    longitude = hass.config.longitude
+    lat = hass.config.latitude
+    lon = hass.config.longitude
 
-    api = SeoulBikeApi(seoul_api_key)
+    api = SeoulBikeApi(api_key)
 
     coordinator = SeoulBikeCoordinator(
         hass=hass,
         api=api,
-        latitude=latitude,
-        longitude=longitude,
+        lat=lat,
+        lon=lon,
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -31,7 +31,7 @@ async def async_setup_entry(hass, entry):
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    _LOGGER.info(f"Seoul Bike initialized with API key and coordinator")
+    _LOGGER.info(f"SeoulBike loaded")
 
     return True
 
@@ -39,6 +39,6 @@ async def async_setup_entry(hass, entry):
 async def async_unload_entry(hass, entry):
     hass.data[DOMAIN].pop(entry.entry_id, None)
 
-    _LOGGER.info(f"Seoul Bike unloaded")
+    _LOGGER.info(f"SeoulBike unloaded")
 
     return True
