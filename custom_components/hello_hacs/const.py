@@ -1,0 +1,1 @@
+DOMAIN = "hello_hacs"
