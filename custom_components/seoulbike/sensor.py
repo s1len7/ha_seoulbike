@@ -1,3 +1,4 @@
+raise Exception("SEOLBIKE SENSOR LOADED")
 """Sensors."""
 
 from homeassistant.components.sensor import SensorEntity
