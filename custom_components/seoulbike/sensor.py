@@ -1,4 +1,4 @@
-"""Sensors."""
+"""Sensors for Seoul Bike."""
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -32,10 +32,7 @@ class SeoulBikeSensor(CoordinatorEntity, SensorEntity):
         if not station:
             return "No data"
 
-        name = station.get("name")
-        bikes = station.get("bikes", 0)
-
-        return f"{name} ({bikes} bikes)"
+        return f"{station.get('name')} ({station.get('bikes', 0)} bikes)"
 
     @property
     def extra_state_attributes(self):
