@@ -31,15 +31,12 @@ async def async_setup_entry(hass, entry):
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # _LOGGER.info("SeoulBike loaded")
     _LOGGER.warning("🔥 SEOULBIKE INIT EXECUTED 🔥")
-    
+
     return True
 
 
 async def async_unload_entry(hass, entry):
     hass.data[DOMAIN].pop(entry.entry_id, None)
-
-    _LOGGER.info("SeoulBike unloaded")
 
     return True
