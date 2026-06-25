@@ -1,4 +1,4 @@
-"""Coordinator for Seoul Bike."""
+"""Coordinator."""
 
 from __future__ import annotations
 

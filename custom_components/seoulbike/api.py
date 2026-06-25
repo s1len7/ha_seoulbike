@@ -3,12 +3,28 @@
 from __future__ import annotations
 
 import aiohttp
-from haversine import haversine
 
 
 class SeoulBikeApi:
-    def __init__(self, seoul_api_key: str):
-        self._key = seoul_api_key
+    def __init__(self, api_key: str):
+        self._key = api_key
+
+    # 🔥 API 키 검증 (중요)
+    async def validate_api_key(self) -> bool:
+        url = f"http://openapi.seoul.go.kr:8088/{self._key}/json/bikeList/1/5/"
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=10) as resp:
+                    if resp.status != 200:
+                        return False
+
+                    data = await resp.json()
+
+                    return "rentBikeStatus" in data
+
+        except Exception:
+            return False
 
     async def get_all_stations(self) -> list[dict]:
         stations = []

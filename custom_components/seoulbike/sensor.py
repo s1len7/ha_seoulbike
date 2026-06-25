@@ -7,7 +7,6 @@ from .const import DOMAIN
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    raise Exception(f"{__file__} loaded")
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     async_add_entities(
@@ -20,6 +19,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class SeoulBikeSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator):
         super().__init__(coordinator)
+
         self._attr_name = "Seoul Bike Nearest Station"
         self._attr_unique_id = "seoulbike_nearest"
 
