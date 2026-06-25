@@ -1,13 +1,37 @@
+from __future__ import annotations
+
+import voluptuous as vol
+
 from homeassistant import config_entries
+
+from .const import (
+    DOMAIN,
+    CONF_VWORLD_API_KEY,
+    CONF_SEOUL_API_KEY,
+)
+
 
 class SeoulBikeConfigFlow(
     config_entries.ConfigFlow,
-    domain="seoulbike"
+    domain=DOMAIN,
 ):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        return self.async_create_entry(
-            title="Hello Seoul Bike",
-            data={}
+        if user_input is not None:
+            return self.async_create_entry(
+                title="Seoul Bike",
+                data=user_input,
+            )
+
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_VWORLD_API_KEY): str,
+                vol.Required(CONF_SEOUL_API_KEY): str,
+            }
+        )
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=schema,
         )
