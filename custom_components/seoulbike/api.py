@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import aiohttp
-
 from haversine import haversine
 
 
@@ -12,6 +11,7 @@ class SeoulBikeApi:
         self._seoul_api_key = seoul_api_key
 
     async def validate_api_key(self) -> bool:
+        """API 키 유효성 체크"""
         url = f"http://openapi.seoul.go.kr:8088/{self._seoul_api_key}/json/bikeList/1/5/"
 
         try:
@@ -22,12 +22,18 @@ class SeoulBikeApi:
 
                     data = await response.json()
 
-                    return "rentBikeStatus" in data
+                    bike_data = data.get("rentBikeStatus")
+                    if not bike_data:
+                        return False
+
+                    # 정상 응답 구조 체크
+                    return "row" in bike_data
 
         except Exception:
             return False
 
     async def get_all_stations(self) -> list[dict]:
+        """전체 따릉이 대여소 목록 가져오기"""
         stations = []
 
         start_index = 1
@@ -42,25 +48,32 @@ class SeoulBikeApi:
 
                 async with session.get(url, timeout=30) as response:
                     response.raise_for_status()
-
                     data = await response.json()
 
-                bike_status = data.get("rentBikeStatus")
+                bike_data = data.get("rentBikeStatus")
 
-                if not bike_status:
+                if not bike_data:
+                    break
+
+                # 핵심: 실제 데이터는 row 안에 있음
+                rows = bike_data.get("row", [])
+
+                if not isinstance(rows, list):
                     break
 
                 stations.extend(
                     {
-                        "station_id": station["stationId"],
-                        "station_name": station["stationName"],
-                        "latitude": float(station["stationLatitude"]),
-                        "longitude": float(station["stationLongitude"]),
+                        "station_id": station.get("stationId"),
+                        "station_name": station.get("stationName"),
+                        "latitude": float(station.get("stationLatitude", 0)),
+                        "longitude": float(station.get("stationLongitude", 0)),
                     }
-                    for station in bike_status
+                    for station in rows
+                    if isinstance(station, dict)
                 )
 
-                if len(bike_status) < page_size:
+                # 마지막 페이지 체크
+                if len(rows) < page_size:
                     break
 
                 start_index += page_size
@@ -72,21 +85,17 @@ class SeoulBikeApi:
         latitude: float,
         longitude: float,
     ) -> float | None:
+        """가장 가까운 따릉이 거리 계산 (km)"""
 
         stations = await self.get_all_stations()
 
         if not stations:
             return None
 
-        nearest_distance = min(
+        return min(
             haversine(
                 (latitude, longitude),
-                (
-                    station["latitude"],
-                    station["longitude"],
-                ),
+                (station["latitude"], station["longitude"]),
             )
             for station in stations
         )
-
-        return nearest_distance
