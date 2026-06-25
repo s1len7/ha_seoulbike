@@ -1,10 +1,12 @@
 {
   "domain": "seoulbike",
   "name": "Seoul Bike",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "config_flow": true,
-  "codeowners": ["@s1len7"],
+  "icon": "icon.png",
   "iot_class": "cloud_polling",
+  "platforms": ["sensor"],
+  "codeowners": ["@s1len7"],
   "requirements": [
     "haversine>=2.8.0"
   ]
