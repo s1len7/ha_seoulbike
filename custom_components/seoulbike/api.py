@@ -51,17 +51,3 @@ class SeoulBikeApi:
                 start += size
 
         return stations
-
-    async def nearest(self, lat: float, lon: float) -> dict | None:
-        stations = await self.get_all_stations()
-
-        if not stations:
-            return None
-
-        return min(
-            stations,
-            key=lambda s: haversine(
-                (lat, lon),
-                (s["lat"], s["lon"]),
-            ),
-        )

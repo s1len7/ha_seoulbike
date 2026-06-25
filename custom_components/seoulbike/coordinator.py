@@ -1,4 +1,4 @@
-"""Coordinator."""
+"""Coordinator for Seoul Bike."""
 
 from __future__ import annotations
 
@@ -30,8 +30,6 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
             if not stations:
                 return {}
-
-            _LOGGER.warning(f"COORD DATA SAMPLE: {stations[:1]}")  # 👈 여기
 
             nearest = min(
                 stations,
