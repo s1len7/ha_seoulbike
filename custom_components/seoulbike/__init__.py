@@ -31,8 +31,9 @@ async def async_setup_entry(hass, entry):
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    _LOGGER.info("SeoulBike loaded")
-
+    # _LOGGER.info("SeoulBike loaded")
+    _LOGGER.warning("🔥 SEOULBIKE INIT EXECUTED 🔥")
+    
     return True
 
 
