@@ -9,6 +9,7 @@ from haversine import haversine
 class SeoulBikeApi:
     def __init__(self, seoul_api_key: str):
         self._key = seoul_api_key
+        raise Exception(f"{__file__}: SeoulBikeApi loaded")
 
     async def get_all_stations(self) -> list[dict]:
         stations = []
