@@ -1,5 +1,5 @@
 """Sensors."""
-
+print("SEOULBIKE SENSOR LOADED")
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
