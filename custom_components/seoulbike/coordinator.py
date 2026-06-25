@@ -1,4 +1,4 @@
-"""Coordinator for Seoul Bike."""
+"""Coordinator."""
 
 from __future__ import annotations
 
@@ -8,12 +8,11 @@ from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from haversine import haversine
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
 class SeoulBikeCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, api, latitude, longitude):
+    def __init__(self, hass, api, lat, lon):
         super().__init__(
             hass,
             _LOGGER,
@@ -22,8 +21,8 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         )
 
         self.api = api
-        self.latitude = latitude
-        self.longitude = longitude
+        self.lat = lat
+        self.lon = lon
 
     async def _async_update_data(self):
         try:
@@ -35,16 +34,16 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
             nearest = min(
                 stations,
                 key=lambda s: haversine(
-                    (self.latitude, self.longitude),
-                    (s["latitude"], s["longitude"]),
+                    (self.lat, self.lon),
+                    (s["lat"], s["lon"]),
                 ),
             )
 
             return {
                 "stations": stations,
-                "nearest_station": nearest,
+                "nearest": nearest,
             }
 
-        except Exception as err:
-            _LOGGER.error(f"SeoulBike update failed: {err}")
+        except Exception as e:
+            _LOGGER.error(f"SeoulBike update failed: {e}")
             return {}
