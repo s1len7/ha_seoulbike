@@ -7,6 +7,7 @@ from .const import DOMAIN
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
+    raise Exception(f"{__file__} loaded")
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
     async_add_entities(
