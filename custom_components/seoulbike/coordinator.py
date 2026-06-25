@@ -23,6 +23,7 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         self.api = api
         self.lat = lat
         self.lon = lon
+        raise Exception(f"{__file__} loaded")
 
     async def _async_update_data(self):
         try:
