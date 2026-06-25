@@ -1,5 +1,6 @@
 """Seoul Bike."""
 
+raise Exception("SEOLBIKE INIT LOADED")
 from __future__ import annotations
 
 import logging
@@ -31,9 +32,6 @@ async def async_setup_entry(hass, entry):
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # 🔥 중요: sensor 플랫폼 수동 로딩
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
-
     _LOGGER.info("SeoulBike loaded")
 
     return True
@@ -41,8 +39,6 @@ async def async_setup_entry(hass, entry):
 
 async def async_unload_entry(hass, entry):
     hass.data[DOMAIN].pop(entry.entry_id, None)
-
-    await hass.config_entries.async_forward_entry_unload(entry, "sensor")
 
     _LOGGER.info("SeoulBike unloaded")
 
