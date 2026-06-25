@@ -1,4 +1,3 @@
-raise Exception("SEOLBIKE SENSOR LOADED")
 """Sensors."""
 
 from homeassistant.components.sensor import SensorEntity
@@ -33,7 +32,10 @@ class SeoulBikeSensor(CoordinatorEntity, SensorEntity):
         if not station:
             return "No data"
 
-        return f"{station.get('name')} ({station.get('bikes', 0)} bikes)"
+        name = station.get("name")
+        bikes = station.get("bikes", 0)
+
+        return f"{name} ({bikes} bikes)"
 
     @property
     def extra_state_attributes(self):
@@ -46,7 +48,6 @@ class SeoulBikeSensor(CoordinatorEntity, SensorEntity):
 
         return {
             "station_id": station.get("id"),
-            "distance_km": None,
             "available_bikes": station.get("bikes", 0),
             "lat": station.get("lat"),
             "lon": station.get("lon"),
