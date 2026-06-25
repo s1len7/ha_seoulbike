@@ -10,4 +10,5 @@ async def async_setup_entry(hass, entry):
     return True
 
 async def async_unload_entry(hass, entry):
+    _LOGGER.info("Goodbye World from hello_hacs!")
     return True
