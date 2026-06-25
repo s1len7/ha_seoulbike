@@ -1,4 +1,4 @@
-"""Sensors for Seoul Bike."""
+"""Sensors."""
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -19,14 +19,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class SeoulBikeSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator):
         super().__init__(coordinator)
-
         self._attr_name = "Seoul Bike Nearest Station"
         self._attr_unique_id = "seoulbike_nearest"
 
     @property
     def native_value(self):
         data = self.coordinator.data or {}
-
         station = data.get("nearest")
 
         if not station:
@@ -37,7 +35,6 @@ class SeoulBikeSensor(CoordinatorEntity, SensorEntity):
     @property
     def extra_state_attributes(self):
         data = self.coordinator.data or {}
-
         station = data.get("nearest")
 
         if not station:
