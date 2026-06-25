@@ -16,6 +16,7 @@ class SeoulBikeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data=user_input,
             )
 
+        raise Exception(f"{__file__} loaded")
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
