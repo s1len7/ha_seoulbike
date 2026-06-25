@@ -1,2 +1,3 @@
 # hello_ha
-hello_ha description
+
+This repo is for hello_homeassistant app.
