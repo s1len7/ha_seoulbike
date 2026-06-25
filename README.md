@@ -1,3 +1,3 @@
-# hello_hacs
+# ha_seoulbike
 
-This repo is for hello_homeassistant app template.
+Home Assistant를 위한 따릉이 통합입니다.
