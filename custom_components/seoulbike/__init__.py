@@ -1,9 +1,11 @@
 """Seoul Bike integration."""
 
+from __future__ import annotations
+
 import logging
 
 from .const import (
-    CONF_VWORLD_API_KEY,
+    DOMAIN,
     CONF_SEOUL_API_KEY,
 )
 
@@ -11,16 +13,25 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry):
-    vworld_api_key = entry.data.get(CONF_VWORLD_API_KEY)
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = entry.data
+
     seoul_api_key = entry.data.get(CONF_SEOUL_API_KEY)
 
+    latitude = hass.config.latitude
+    longitude = hass.config.longitude
+
     _LOGGER.info("Seoul Bike initialized")
-    _LOGGER.debug("VWORLD key configured: %s", bool(vworld_api_key))
-    _LOGGER.debug("Seoul API key configured: %s", bool(seoul_api_key))
+    _LOGGER.info(f"Seoul API Key: {seoul_api_key}")
+    _LOGGER.info(f"Home latitude: {latitude}")
+    _LOGGER.info(f"Home longitude: {longitude}")
 
     return True
 
 
 async def async_unload_entry(hass, entry):
+    hass.data[DOMAIN].pop(entry.entry_id)
+
     _LOGGER.info("Seoul Bike unloaded")
+
     return True
