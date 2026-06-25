@@ -1,7 +1,7 @@
 {
   "domain": "seoulbike",
   "name": "Seoul Bike",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "config_flow": true,
   "codeowners": [],
   "iot_class": "cloud_polling"
