@@ -1,0 +1,14 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "서울 공공자전거 설정",
+        "description": "서울 공공자전거 정보를 사용하기 위해 API 키를 입력하세요.\n\nVWORLD API Key: 주소를 위도·경도로 변환하는 데 사용됩니다.\n발급: https://www.vworld.kr\n\n서울 열린데이터광장 API Key: 실시간 따릉이 정보를 조회하는 데 사용됩니다.\n발급: https://data.seoul.go.kr",
+        "data": {
+          "vworld_api_key": "VWORLD API Key",
+          "seoul_api_key": "서울 열린데이터광장 API Key"
+        }
+      }
+    }
+  }
+}
