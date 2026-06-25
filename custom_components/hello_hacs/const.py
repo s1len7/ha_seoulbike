@@ -1,1 +1,1 @@
-DOMAIN = "hello_hacs"
+DOMAIN = "ha_seoulbike"
