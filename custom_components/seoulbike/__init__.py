@@ -1,6 +1,5 @@
 """Seoul Bike."""
 
-raise Exception("SEOLBIKE INIT LOADED")
 from __future__ import annotations
 
 import logging
