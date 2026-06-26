@@ -3,12 +3,10 @@ import logging
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
 
-from .const import DOMAIN
+from .const import DOMAIN, SENSOR_ENTITY_ID, ZONE_ENTITY_ID
 
 _LOGGER = logging.getLogger(__name__)
 
-ZONE_ENTITY_ID = "zone.seoulbike_nearest_station"
-SENSOR_ENTITY_ID = "sensor.seoulbike_nearest_station"  # CoordinatorEntity name 기반
 
 async def async_setup_zone_manager(hass: HomeAssistant, entry):
     """Entry point from __init__.py"""
