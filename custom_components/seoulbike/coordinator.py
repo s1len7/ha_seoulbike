@@ -28,14 +28,16 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
     def _get_home(self):
 
-        state = self.hass.states.get("zone.home")
+        # 🔥 HA 공식 기준 위치 사용 (zone.home 제거)
+        lat = self.hass.config.latitude
+        lon = self.hass.config.longitude
 
-        if not state:
+        if lat is None or lon is None:
             return None
 
         return {
-            "lat": state.attributes.get("latitude"),
-            "lon": state.attributes.get("longitude"),
+            "lat": float(lat),
+            "lon": float(lon),
         }
 
     async def _async_update_data(self):
@@ -44,7 +46,7 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
         home = self._get_home()
 
-        if not home:
+        if not home or not stations:
             return {
                 "stations": [],
                 "top_stations": [],
@@ -55,20 +57,31 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
         for s in stations:
 
-            dist = distance(
-                home["lat"],
-                home["lon"],
-                s["lat"],
-                s["lon"]
-            )
+            try:
+                lat = float(s.get("lat"))
+                lon = float(s.get("lon"))
 
-            s["distance_km"] = dist
-            enriched.append(s)
+                dist = distance(
+                    home["lat"],
+                    home["lon"],
+                    lat,
+                    lon
+                )
 
-        enriched.sort(key=lambda x: x["distance_km"])
+                s["lat"] = lat
+                s["lon"] = lon
+                s["distance_km"] = float(dist)
+
+                enriched.append(s)
+
+            except (TypeError, ValueError):
+                # 좌표 깨진 데이터 방어
+                continue
+
+        enriched.sort(key=lambda x: x.get("distance_km", float("inf")))
 
         return {
             "stations": enriched,
-            "top_stations": enriched[:self.top_n],
+            "top_stations": enriched[: self.top_n],
             "nearest": enriched[0] if enriched else None
         }
