@@ -19,7 +19,7 @@ class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
         CoordinatorEntity.__init__(self, coordinator)
 
         self._attr_unique_id = f"{DOMAIN}.device_tracker.nearest_station"
-        self._attr_name = f"🚲{self._attr_unique_id}"
+        self._attr_name = self._attr_unique_id
         self._attr_icon = "mdi:bicycle"
 
     # 📍 위치
@@ -37,7 +37,13 @@ class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
     @property
     def state(self):
         nearest = (self.coordinator.data or {}).get("nearest", {})
-        return nearest.get("name", "unknown")
+
+        bikes = nearest.get("bikes", 0)
+
+        try:
+            return int(bikes)
+        except (TypeError, ValueError):
+            return 0
 
     # 📌 popup 정보
     @property
@@ -58,7 +64,23 @@ class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
     def source_type(self):
         return "gps"
     
-    # # 🚲 핵심 추가
+    # # 🚲 핵심: Map marker 이미지 (S 제거용)
     # @property
     # def entity_picture(self):
-    #     return "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6b2.png"
+    #     bikes = (self.coordinator.data or {}).get("nearest", {}).get("bikes", 0)
+
+    #     try:
+    #         bikes = int(bikes)
+    #     except (TypeError, ValueError):
+    #         bikes = 0
+
+    #     # ✔ 상태에 따라 아이콘 변화
+    #     if bikes == 0:
+    #         # 비어있음 → 빨간 자전거
+    #         return "https://cdn-icons-png.flaticon.com/512/854/854878.png"
+    #     elif bikes <= 3:
+    #         # 부족
+    #         return "https://cdn-icons-png.flaticon.com/512/854/854894.png"
+    #     else:
+    #         # 충분
+    #         return "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6b2.png"
