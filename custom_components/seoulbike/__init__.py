@@ -1,19 +1,28 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
+from .const import DOMAIN, DEFAULT_RADIUS_KM
 from .api import SeoulBikeApi
 from .coordinator import SeoulBikeCoordinator
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
-    api = SeoulBikeApi(entry.data["api_key"])
+    api_key = entry.data.get("seoul_api_key")
+
+    radius_km = entry.data.get("radius_km", DEFAULT_RADIUS_KM)
+
+    try:
+        radius_km = float(radius_km)
+    except (TypeError, ValueError):
+        radius_km = DEFAULT_RADIUS_KM
+
+    api = SeoulBikeApi(api_key)
 
     coordinator = SeoulBikeCoordinator(
-        hass,
-        api,
-        entry.data.get("radius_km", 1.0),
+        hass=hass,
+        api_client=api,
+        radius_km=radius_km,
     )
 
     await coordinator.async_config_entry_first_refresh()

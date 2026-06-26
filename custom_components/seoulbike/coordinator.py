@@ -2,58 +2,64 @@ from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.location import distance
 
-from .const import TOP_N
+from .const import DOMAIN, TOP_N
 
 
 class SeoulBikeCoordinator(DataUpdateCoordinator):
 
-    def __init__(self, hass, api, radius_km):
+    def __init__(self, hass, api_client, radius_km=1.0):
 
         self.hass = hass
-        self.api = api
-        self.radius_km = radius_km
+        self.api_client = api_client
+        self.radius_km = float(radius_km)
 
         super().__init__(
             hass,
             logger=None,
-            name="seoulbike",
+            name=DOMAIN,
             update_interval=timedelta(seconds=60),
         )
 
-    def _home(self):
+    def _get_home(self):
 
-        s = self.hass.states.get("zone.home")
+        state = self.hass.states.get("zone.home")
 
-        if not s:
+        if not state:
             return None
 
-        return s.attributes.get("latitude"), s.attributes.get("longitude")
+        return {
+            "lat": state.attributes.get("latitude"),
+            "lon": state.attributes.get("longitude"),
+        }
 
     async def _async_update_data(self):
 
-        stations = await self.api.get_stations()
+        stations = await self.api_client.get_stations()
 
-        home = self._home()
+        home = self._get_home()
 
         if not home:
             return {"stations": [], "top5": []}
 
-        hx, hy = home
-
-        result = []
+        enriched = []
 
         for s in stations:
 
-            d = distance(hx, hy, s["lat"], s["lon"])
+            dist = distance(
+                home["lat"],
+                home["lon"],
+                s["lat"],
+                s["lon"]
+            )
 
-            s["distance_km"] = d
+            s["distance_km"] = dist
 
-            if d <= self.radius_km:
-                result.append(s)
+            if dist <= self.radius_km:
+                enriched.append(s)
 
-        result.sort(key=lambda x: x["distance_km"])
+        enriched.sort(key=lambda x: x["distance_km"])
 
         return {
-            "stations": result,
-            "top5": result[:TOP_N]
+            "stations": enriched,
+            "top5": enriched[:TOP_N]
         }
