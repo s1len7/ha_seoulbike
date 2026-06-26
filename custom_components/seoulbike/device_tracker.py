@@ -56,6 +56,7 @@ class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
             "distance_km": nearest.get("distance_km"),
             "bikes": nearest.get("bikes"),
             "racks": nearest.get("racks"),
+            "availability_ratio": nearest.get("availability_ratio"),
             "latitude": nearest.get("lat"),
             "longitude": nearest.get("lon"),
         }
