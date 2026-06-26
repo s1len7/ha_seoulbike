@@ -58,7 +58,7 @@ class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
     def source_type(self):
         return "gps"
     
-    # 🚲 핵심 추가
-    @property
-    def entity_picture(self):
-        return "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6b2.png"
+    # # 🚲 핵심 추가
+    # @property
+    # def entity_picture(self):
+    #     return "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6b2.png"
