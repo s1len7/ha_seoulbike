@@ -18,7 +18,7 @@ class SeoulBikeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema({
             vol.Required(CONF_API_KEY): str,
-            vol.Optional(CONF_RADIUS_KM, default=DEFAULT_RADIUS_KM): float,
+            vol.Optional(CONF_RADIUS_KM, default=DEFAULT_RADIUS_KM): vol.Coerce(float),
         })
 
         return self.async_show_form(step_id="user", data_schema=schema)
