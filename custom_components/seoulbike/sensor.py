@@ -26,7 +26,7 @@ class SeoulBikeNearestStation(CoordinatorEntity, SensorEntity):
 
         self._attr_has_entity_name = True
 
-        self._attr_unique_id = f"{DOMAIN}.sensor.info_nearest_station"
+        self._attr_unique_id = f"{DOMAIN}.sensor.nearest_station"
         self._attr_name = self._attr_unique_id
         self._attr_icon = "mdi:information"
 
