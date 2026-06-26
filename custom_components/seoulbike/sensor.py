@@ -24,8 +24,8 @@ class SeoulBikeNearest(CoordinatorEntity, SensorEntity):
 
         super().__init__(coordinator)
 
-        self._attr_name = "SeoulBike Nearest"
-        self._attr_unique_id = "seoulbike_nearest"
+        self._attr_name = "SeoulBike Nearest Station"
+        self._attr_unique_id = "seoulbike_nearest_station"
         self._attr_icon = "mdi:bicycle"
 
     @property
@@ -62,8 +62,8 @@ class SeoulBikeTopN(CoordinatorEntity, SensorEntity):
 
         super().__init__(coordinator)
 
-        self._attr_name = "SeoulBike Top N"
-        self._attr_unique_id = "seoulbike_top_n"
+        self._attr_name = "SeoulBike Nearby Stations"
+        self._attr_unique_id = "seoulbike_nearby_stations"
         self._attr_icon = "mdi:bicycle"
 
     @property
