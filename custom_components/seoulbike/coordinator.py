@@ -4,14 +4,14 @@ from datetime import timedelta
 from haversine import Unit, haversine
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DOMAIN
+from .const import DOMAIN, DEFAULT_RADIUS_KM, DEFAULT_TOP_N
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class SeoulBikeCoordinator(DataUpdateCoordinator):
 
-    def __init__(self, hass, api_client, radius_km=1.0, top_n=3):
+    def __init__(self, hass, api_client, radius_km=DEFAULT_RADIUS_KM, top_n=DEFAULT_TOP_N):
 
         self.hass = hass
         self.api_client = api_client
