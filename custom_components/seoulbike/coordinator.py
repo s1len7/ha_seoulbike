@@ -26,62 +26,110 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=60),
         )
 
+    # -----------------------------
+    # HOME 좌표 (HA 기준)
+    # -----------------------------
     def _get_home(self):
 
-        # 🔥 HA 공식 기준 위치 사용 (zone.home 제거)
         lat = self.hass.config.latitude
         lon = self.hass.config.longitude
 
-        if lat is None or lon is None:
+        try:
+            lat = float(lat)
+            lon = float(lon)
+        except (TypeError, ValueError):
             return None
 
-        return {
-            "lat": float(lat),
-            "lon": float(lon),
-        }
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            _LOGGER.warning(f"[SeoulBike] Invalid HOME coords: lat={lat}, lon={lon}")
+            return None
 
+        return {"lat": lat, "lon": lon}
+
+    # -----------------------------
+    # 좌표 검증
+    # -----------------------------
+    def _validate_station(self, s):
+
+        try:
+            lat = float(s.get("lat"))
+            lon = float(s.get("lon"))
+        except (TypeError, ValueError):
+            return None
+
+        # 기본 범위 체크
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            _LOGGER.debug(f"[SeoulBike] Out of range station skipped: {s}")
+            return None
+
+        # 🔥 lat/lon swap 감지 (한국 기준 휴리스틱)
+        # lat이 100 이상이고 lon이 40 근처면 swap 의심
+        if lat > 90 and abs(lon) < 90:
+            _LOGGER.warning(
+                f"[SeoulBike] Lat/Lon swapped detected -> fixing: lat={lat}, lon={lon}"
+            )
+            lat, lon = lon, lat
+
+        s["lat"] = lat
+        s["lon"] = lon
+
+        return s
+
+    # -----------------------------
+    # UPDATE
+    # -----------------------------
     async def _async_update_data(self):
 
         stations = await self.api_client.get_all_stations()
-
         home = self._get_home()
 
-        if not home or not stations:
-            return {
-                "stations": [],
-                "top_stations": [],
-                "nearest": None
-            }
+        if not home:
+            _LOGGER.error("[SeoulBike] Home coordinates invalid")
+            return {"stations": [], "top_stations": [], "nearest": None}
 
         enriched = []
 
         for s in stations:
 
-            try:
-                lat = float(s.get("lat"))
-                lon = float(s.get("lon"))
+            s = self._validate_station(s)
+            if not s:
+                continue
 
+            try:
                 dist = distance(
                     home["lat"],
                     home["lon"],
-                    lat,
-                    lon
+                    s["lat"],
+                    s["lon"]
                 )
 
-                s["lat"] = lat
-                s["lon"] = lon
-                s["distance_km"] = float(dist)
+                dist = float(dist)
 
+                # 🔥 비정상 거리 탐지 로그
+                if dist > 100:
+                    _LOGGER.warning(
+                        f"[SeoulBike] Large distance detected: {dist} km "
+                        f"(home={home}, station={s.get('name')})"
+                    )
+
+                s["distance_km"] = dist
                 enriched.append(s)
 
-            except (TypeError, ValueError):
-                # 좌표 깨진 데이터 방어
+            except Exception as e:
+                _LOGGER.debug(f"[SeoulBike] Distance calc error: {e}")
                 continue
 
         enriched.sort(key=lambda x: x.get("distance_km", float("inf")))
 
+        # 🔥 샘플 로그 (첫 실행 때만 확인용)
+        if enriched:
+            _LOGGER.info(
+                f"[SeoulBike] NEAREST SAMPLE: "
+                f"{enriched[0].get('name')} = {enriched[0].get('distance_km')} km"
+            )
+
         return {
             "stations": enriched,
             "top_stations": enriched[: self.top_n],
-            "nearest": enriched[0] if enriched else None
+            "nearest": enriched[0] if enriched else None,
         }
