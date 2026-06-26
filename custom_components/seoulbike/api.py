@@ -53,6 +53,7 @@ class SeoulBikeApi:
                         "lat": float(s.get("stationLatitude", 0)),
                         "lon": float(s.get("stationLongitude", 0)),
                         "bikes": int(s.get("parkingBikeTotCnt", 0)),
+                        "racks": int(s.get("rackTotCnt", 0)),
                     }
                     for s in rows
                     if isinstance(s, dict)
