@@ -17,7 +17,6 @@ class SeoulBikeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             api = SeoulBikeApi(user_input[CONF_SEOUL_API_KEY])
 
-            # 🔥 API 키 검증
             valid = await api.validate_api_key()
 
             if not valid:
