@@ -17,7 +17,6 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         self.api_client = api_client
         self.radius_km = float(radius_km)
 
-        # 🔥 핵심: hass만 positional, 나머지는 keyword
         super().__init__(
             hass,
             logger=_LOGGER,
@@ -39,7 +38,8 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
 
-        stations = await self.api_client.get_stations()
+        # 🔥 여기 수정
+        stations = await self.api_client.get_all_stations()
 
         home = self._get_home()
 
