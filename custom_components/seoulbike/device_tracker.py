@@ -9,20 +9,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
     async_add_entities([
-        SeoulBikeNearestTracker(coordinator)
+        SeoulBikeNearestStationTracker(coordinator)
     ])
 
 
-class SeoulBikeNearestTracker(TrackerEntity, CoordinatorEntity):
+class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
 
     def __init__(self, coordinator):
         CoordinatorEntity.__init__(self, coordinator)
 
-        self._attr_unique_id = "seoulbike_nearest_tracker"
-        self._attr_name = "SeoulBike Nearest Station"
-        self._attr_icon = "mdi:bicycle"   # 👈 이거 추가
+        self._attr_unique_id = f"{DOMAIN}.seoulbike_tracker_nearest_station"
+        self._attr_name = self._attr_unique_id
+        self._attr_icon = "mdi:bicycle"
 
-    # 📍 지도 좌표
+    # 📍 위치
     @property
     def latitude(self):
         nearest = (self.coordinator.data or {}).get("nearest", {})
@@ -33,12 +33,13 @@ class SeoulBikeNearestTracker(TrackerEntity, CoordinatorEntity):
         nearest = (self.coordinator.data or {}).get("nearest", {})
         return nearest.get("lon")
 
-    # 📌 상태
+    # 📌 상태 (Map 표시용 + 의미값)
     @property
     def state(self):
-        return (self.coordinator.data or {}).get("nearest", {}).get("name", "unknown")
+        nearest = (self.coordinator.data or {}).get("nearest", {})
+        return nearest.get("name", "unknown")
 
-    # 📌 Map popup에 표시될 핵심 정보
+    # 📌 popup 정보
     @property
     def extra_state_attributes(self):
         nearest = (self.coordinator.data or {}).get("nearest", {})

@@ -3,7 +3,7 @@ import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, NEAREST_STATION_ID
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,21 +13,22 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
     async_add_entities([
-        SeoulBikeNearest(coordinator),
-        SeoulBikeTopN(coordinator),
+        SeoulBikeNearestStation(coordinator),
+        SeoulBikeNearbyStations(coordinator),
     ])
 
 
-class SeoulBikeNearest(CoordinatorEntity, SensorEntity):
+class SeoulBikeNearestStation(CoordinatorEntity, SensorEntity):
 
     def __init__(self, coordinator):
 
         super().__init__(coordinator)
 
         self._attr_has_entity_name = True
-        self._attr_name = "Nearest Station"
-        self._attr_unique_id = NEAREST_STATION_ID
-        self._attr_icon = "mdi:bicycle"
+
+        self._attr_unique_id = f"{DOMAIN}.seoulbike_info_nearest_station"
+        self._attr_name = self._attr_unique_id
+        self._attr_icon = "mdi:information"
 
     @property
     def state(self):
@@ -60,16 +61,17 @@ class SeoulBikeNearest(CoordinatorEntity, SensorEntity):
         }
 
 
-class SeoulBikeTopN(CoordinatorEntity, SensorEntity):
+class SeoulBikeNearbyStations(CoordinatorEntity, SensorEntity):
 
     def __init__(self, coordinator):
 
         super().__init__(coordinator)
 
         self._attr_has_entity_name = True
-        self._attr_name = "Nearby Stations"
-        self._attr_unique_id = "seoulbike_nearby_stations"
-        self._attr_icon = "mdi:bicycle"
+
+        self._attr_unique_id = f"{DOMAIN}.seoulbike_list_nearby_stations"
+        self._attr_name = self._attr_unique_id
+        self._attr_icon = "mdi:information"
 
     @property
     def state(self):
