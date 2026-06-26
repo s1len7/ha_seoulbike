@@ -1,7 +1,5 @@
 """Seoul Bike API."""
 
-from __future__ import annotations
-
 import aiohttp
 
 
@@ -9,7 +7,6 @@ class SeoulBikeApi:
     def __init__(self, api_key: str):
         self._key = api_key
 
-    # 🔥 API 키 검증 (중요)
     async def validate_api_key(self) -> bool:
         url = f"http://openapi.seoul.go.kr:8088/{self._key}/json/bikeList/1/5/"
 
