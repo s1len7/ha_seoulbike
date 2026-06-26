@@ -4,13 +4,20 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+from .zone_manager import SeoulBikeZoneManager
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
 
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    # coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+
+    zone_manager = SeoulBikeZoneManager(hass)
+    await zone_manager.async_init()
+
+    hass.data[DOMAIN][entry.entry_id]["zone_manager"] = zone_manager
 
     async_add_entities([
         SeoulBikeNearest(coordinator),
