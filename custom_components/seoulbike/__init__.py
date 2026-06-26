@@ -1,28 +1,23 @@
-"""Seoul Bike."""
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 
-import logging
-
-from .const import DOMAIN, CONF_SEOUL_API_KEY
-from .api import SeoulBikeApi
+from .const import DOMAIN
 from .coordinator import SeoulBikeCoordinator
+from .api import SeoulBikeApi
 
-_LOGGER = logging.getLogger(__name__)
 
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Setup SeoulBike integration."""
 
-async def async_setup_entry(hass, entry):
-
-    api_key = entry.data[CONF_SEOUL_API_KEY]
-
-    lat = hass.config.latitude
-    lon = hass.config.longitude
+    api_key = entry.data["api_key"]
+    radius_km = entry.data.get("radius_km", 1.0)
 
     api = SeoulBikeApi(api_key)
 
     coordinator = SeoulBikeCoordinator(
         hass=hass,
-        api=api,
-        lat=lat,
-        lon=lon,
+        api_client=api,
+        radius_km=radius_km,
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -30,24 +25,21 @@ async def async_setup_entry(hass, entry):
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # 🔥 핵심: sensor platform 연결 (v0.7.5 방식)
     await hass.config_entries.async_forward_entry_setups(
         entry,
-        ["sensor"],
+        ["sensor"]
     )
-
-    _LOGGER.warning("SEOLBIKE INIT OK")
 
     return True
 
 
-async def async_unload_entry(hass, entry):
-
-    hass.data[DOMAIN].pop(entry.entry_id, None)
-
-    await hass.config_entries.async_forward_entry_unload(
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    unload_ok = await hass.config_entries.async_unload_platforms(
         entry,
-        "sensor",
+        ["sensor"]
     )
 
-    return True
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok

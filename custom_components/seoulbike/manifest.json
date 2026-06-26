@@ -1,13 +1,8 @@
 {
   "domain": "seoulbike",
   "name": "Seoul Bike",
-  "version": "0.7.6",
-  "config_flow": true,
-  "iot_class": "cloud_polling",
-  "platforms": ["sensor"],
-  "codeowners": ["@s1len7"],
-  "requirements": [
-    "aiohttp",
-    "haversine>=2.8.0"
-  ]
+  "version": "0.7.7",
+  "requirements": ["haversine"],
+  "dependencies": [],
+  "codeowners": []
 }
