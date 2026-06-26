@@ -4,18 +4,20 @@ from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.location import distance
 
-from .const import DOMAIN, TOP_N
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class SeoulBikeCoordinator(DataUpdateCoordinator):
 
-    def __init__(self, hass, api_client, radius_km=1.0):
+    def __init__(self, hass, api_client, radius_km=1.0, top_n=3):
 
         self.hass = hass
         self.api_client = api_client
+
         self.radius_km = float(radius_km)
+        self.top_n = int(top_n)
 
         super().__init__(
             hass,
@@ -38,13 +40,15 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
 
-        # 🔥 여기 수정
         stations = await self.api_client.get_all_stations()
 
         home = self._get_home()
 
         if not home:
-            return {"stations": [], "top5": []}
+            return {
+                "stations": [],
+                "top_stations": []
+            }
 
         enriched = []
 
@@ -66,5 +70,5 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
         return {
             "stations": enriched,
-            "top5": enriched[:TOP_N]
+            "top_stations": enriched[:self.top_n]
         }
