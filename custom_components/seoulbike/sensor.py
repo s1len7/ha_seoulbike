@@ -2,35 +2,41 @@ from homeassistant.components.sensor import SensorEntity
 from .const import DOMAIN
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+async def async_setup_entry(hass, entry, add_entities):
 
-    async_add_entities([
-        SeoulBikeNearestSensor(coordinator),
-        SeoulBikeTop5Sensor(coordinator),
+    coord = hass.data[DOMAIN][entry.entry_id]
+
+    add_entities([
+        SeoulBikeNearest(coord),
+        SeoulBikeTop5(coord),
     ])
 
 
-class SeoulBikeNearestSensor(SensorEntity):
+class SeoulBikeNearest(SensorEntity):
 
-    def __init__(self, coordinator):
-        self.coordinator = coordinator
+    def __init__(self, coord):
+        self.coord = coord
         self._attr_name = "SeoulBike Nearest"
 
     @property
     def state(self):
-        data = self.coordinator.data
-        if not data or not data["stations"]:
+
+        d = self.coord.data
+
+        if not d or not d["stations"]:
             return None
-        return data["stations"][0]["name"]
+
+        return d["stations"][0]["name"]
 
     @property
     def extra_state_attributes(self):
-        data = self.coordinator.data
-        if not data or not data["stations"]:
+
+        d = self.coord.data
+
+        if not d or not d["stations"]:
             return {}
 
-        s = data["stations"][0]
+        s = d["stations"][0]
 
         return {
             "distance_km": s["distance_km"],
@@ -39,25 +45,28 @@ class SeoulBikeNearestSensor(SensorEntity):
         }
 
 
-class SeoulBikeTop5Sensor(SensorEntity):
+class SeoulBikeTop5(SensorEntity):
 
-    def __init__(self, coordinator):
-        self.coordinator = coordinator
-        self._attr_name = "SeoulBike Top 5"
+    def __init__(self, coord):
+        self.coord = coord
+        self._attr_name = "SeoulBike Top5"
 
     @property
     def state(self):
-        data = self.coordinator.data
-        if not data:
+
+        d = self.coord.data
+
+        if not d:
             return 0
-        return len(data.get("top5", []))
+
+        return len(d.get("top5", []))
 
     @property
     def extra_state_attributes(self):
-        data = self.coordinator.data
-        if not data:
+
+        d = self.coord.data
+
+        if not d:
             return {}
 
-        return {
-            "stations": data.get("top5", [])
-        }
+        return {"stations": d.get("top5", [])}

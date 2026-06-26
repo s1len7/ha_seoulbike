@@ -2,61 +2,58 @@ from datetime import timedelta
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.location import distance
 
-from .const import DOMAIN, DEFAULT_RADIUS_KM, TOP_N
+from .const import TOP_N
 
 
 class SeoulBikeCoordinator(DataUpdateCoordinator):
 
-    def __init__(self, hass, api_client, radius_km=DEFAULT_RADIUS_KM):
+    def __init__(self, hass, api, radius_km):
+
         self.hass = hass
-        self.api_client = api_client
+        self.api = api
         self.radius_km = radius_km
 
         super().__init__(
             hass,
             logger=None,
-            name=DOMAIN,
+            name="seoulbike",
             update_interval=timedelta(seconds=60),
         )
 
-    def _get_home_location(self):
-        """Home Assistant home zone location"""
-        state = self.hass.states.get("zone.home")
+    def _home(self):
 
-        if not state:
+        s = self.hass.states.get("zone.home")
+
+        if not s:
             return None
 
-        return {
-            "lat": state.attributes.get("latitude"),
-            "lon": state.attributes.get("longitude"),
-        }
+        return s.attributes.get("latitude"), s.attributes.get("longitude")
 
     async def _async_update_data(self):
-        stations = await self.api_client.get_stations()
 
-        home = self._get_home_location()
+        stations = await self.api.get_stations()
+
+        home = self._home()
 
         if not home:
             return {"stations": [], "top5": []}
 
-        enriched = []
+        hx, hy = home
+
+        result = []
 
         for s in stations:
-            dist_km = distance(
-                home["lat"],
-                home["lon"],
-                s["lat"],
-                s["lon"],
-            )
 
-            s["distance_km"] = dist_km
+            d = distance(hx, hy, s["lat"], s["lon"])
 
-            if dist_km <= self.radius_km:
-                enriched.append(s)
+            s["distance_km"] = d
 
-        enriched.sort(key=lambda x: x["distance_km"])
+            if d <= self.radius_km:
+                result.append(s)
+
+        result.sort(key=lambda x: x["distance_km"])
 
         return {
-            "stations": enriched,
-            "top5": enriched[:TOP_N]
+            "stations": result,
+            "top5": result[:TOP_N]
         }
