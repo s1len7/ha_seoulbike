@@ -3,5 +3,5 @@
   "content_in_root": false,
   "render_readme": true,
   "country": "KR",
-  "icon": "./custom_components/seoulbike/icon.png"
+  "icon": "icon.png"
 }
