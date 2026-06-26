@@ -1,3 +1,3 @@
-# ha_seoulbike
+# Seoul Bike (따릉이)
 
-Home Assistant를 위한 따릉이입니다.(테스트중)
+Home Assistant custom integration for Seoul Bike (따릉이).
