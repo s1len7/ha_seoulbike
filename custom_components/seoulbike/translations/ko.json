@@ -5,7 +5,8 @@
         "title": "서울 공공자전거 설정",
         "description": "서울 열린데이터광장 API Key를 입력하세요.\n발급처: https://data.seoul.go.kr",
         "data": {
-          "seoul_api_key": "서울 열린데이터광장 API Key"
+          "seoul_api_key": "서울 열린데이터광장 API Key",
+          "radius_km": "검색 반경 (km)"
         }
       }
     },
