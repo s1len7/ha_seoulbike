@@ -1,12 +1,9 @@
-import logging
 from datetime import timedelta
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util.location import distance
 
 from .const import DOMAIN, TOP_N
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class SeoulBikeCoordinator(DataUpdateCoordinator):
@@ -19,7 +16,6 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
         super().__init__(
             hass,
-            logger=_LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=60),
         )
