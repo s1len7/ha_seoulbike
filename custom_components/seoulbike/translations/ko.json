@@ -6,7 +6,8 @@
         "description": "서울 열린데이터광장 API Key를 입력하세요.\n발급처: https://data.seoul.go.kr",
         "data": {
           "seoul_api_key": "서울 열린데이터광장 API Key",
-          "radius_km": "검색 반경 (km) - 현재 위치 기준 가까운 대여소 탐색 범위"
+          "radius_km": "검색 반경 (km) - 현재 위치 기준 가까운 대여소 탐색 범위",
+          "top_n": "탐색할 가까운 대여소 수 최대값"
         }
       }
     },
