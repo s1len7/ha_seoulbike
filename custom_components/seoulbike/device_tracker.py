@@ -18,7 +18,7 @@ class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
     def __init__(self, coordinator):
         CoordinatorEntity.__init__(self, coordinator)
 
-        self._attr_unique_id = f"{DOMAIN}.seoulbike_tracker_nearest_station"
+        self._attr_unique_id = f"{DOMAIN}.device_tracker.nearest_station"
         self._attr_name = self._attr_unique_id
         self._attr_icon = "mdi:bicycle"
 
