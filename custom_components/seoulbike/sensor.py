@@ -1,5 +1,11 @@
+import logging
+
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
 from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -12,22 +18,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
     ])
 
 
-class SeoulBikeNearest(SensorEntity):
+class SeoulBikeNearest(CoordinatorEntity, SensorEntity):
 
     def __init__(self, coordinator):
-        self.coordinator = coordinator
-        self._attr_name = "SeoulBike Nearest"
 
-    @property
-    def unique_id(self):
-        return "seoulbike_nearest"
+        super().__init__(coordinator)
+
+        self._attr_name = "SeoulBike Nearest"
+        self._attr_unique_id = "seoulbike_nearest"
 
     @property
     def state(self):
 
-        data = self.coordinator.data
-
-        nearest = data.get("nearest") if data else None
+        data = self.coordinator.data or {}
+        nearest = data.get("nearest")
 
         if not nearest:
             return None
@@ -37,48 +41,59 @@ class SeoulBikeNearest(SensorEntity):
     @property
     def extra_state_attributes(self):
 
-        data = self.coordinator.data
-
-        nearest = data.get("nearest") if data else None
+        data = self.coordinator.data or {}
+        nearest = data.get("nearest")
 
         if not nearest:
             return {}
 
         return {
-            "distance_km": nearest.get("distance_km"),
-            "bikes": nearest.get("bikes"),
-            "docks": nearest.get("docks"),
+            "distance_km": float(nearest.get("distance_km", 0.0)),
+            "bikes": int(nearest.get("bikes", 0)),
+            "docks": int(nearest.get("docks", 0)),
+            "station_id": nearest.get("id"),
         }
 
 
-class SeoulBikeTopN(SensorEntity):
+class SeoulBikeTopN(CoordinatorEntity, SensorEntity):
 
     def __init__(self, coordinator):
-        self.coordinator = coordinator
-        self._attr_name = "SeoulBike Top N"
 
-    @property
-    def unique_id(self):
-        return "seoulbike_top_n"
+        super().__init__(coordinator)
+
+        self._attr_name = "SeoulBike Top N"
+        self._attr_unique_id = "seoulbike_top_n"
 
     @property
     def state(self):
 
-        data = self.coordinator.data
+        data = self.coordinator.data or {}
 
-        if not data:
-            return 0
+        top = data.get("top_stations", [])
 
-        return len(data.get("top_stations", []))
+        return len(top)
 
     @property
     def extra_state_attributes(self):
 
-        data = self.coordinator.data
+        data = self.coordinator.data or {}
+        top = data.get("top_stations", [])
 
-        if not data:
-            return {}
+        cleaned = []
+
+        for s in top:
+
+            try:
+                cleaned.append({
+                    "name": s.get("name"),
+                    "distance_km": float(s.get("distance_km", 0.0)),
+                    "bikes": int(s.get("bikes", 0)),
+                    "docks": int(s.get("docks", 0)),
+                    "id": s.get("id"),
+                })
+            except (TypeError, ValueError):
+                continue
 
         return {
-            "stations": data.get("top_stations", [])
+            "stations": cleaned
         }
