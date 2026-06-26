@@ -21,6 +21,10 @@ class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
         self._attr_name = "SeoulBike Nearest"
 
     @property
+    def state(self):
+        return "home"
+
+    @property
     def latitude(self):
         data = self.coordinator.data.get("nearest", {})
         return float(data.get("lat", 0))
