@@ -26,6 +26,7 @@ class SeoulBikeNearest(CoordinatorEntity, SensorEntity):
 
         self._attr_name = "SeoulBike Nearest"
         self._attr_unique_id = "seoulbike_nearest"
+        self._attr_icon = "mdi:bicycle"
 
     @property
     def state(self):
@@ -50,7 +51,7 @@ class SeoulBikeNearest(CoordinatorEntity, SensorEntity):
         return {
             "distance_km": float(nearest.get("distance_km", 0.0)),
             "bikes": int(nearest.get("bikes", 0)),
-            "docks": int(nearest.get("docks", 0)),
+            "racks": int(nearest.get("racks", 0)),
             "station_id": nearest.get("id"),
         }
 
@@ -63,6 +64,7 @@ class SeoulBikeTopN(CoordinatorEntity, SensorEntity):
 
         self._attr_name = "SeoulBike Top N"
         self._attr_unique_id = "seoulbike_top_n"
+        self._attr_icon = "mdi:bicycle"
 
     @property
     def state(self):
@@ -88,7 +90,7 @@ class SeoulBikeTopN(CoordinatorEntity, SensorEntity):
                     "name": s.get("name"),
                     "distance_km": float(s.get("distance_km", 0.0)),
                     "bikes": int(s.get("bikes", 0)),
-                    "docks": int(s.get("docks", 0)),
+                    "racks": int(s.get("racks", 0)),
                     "id": s.get("id"),
                 })
             except (TypeError, ValueError):
