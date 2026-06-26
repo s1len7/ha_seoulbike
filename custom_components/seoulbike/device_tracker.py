@@ -20,6 +20,7 @@ class SeoulBikeNearestTracker(TrackerEntity, CoordinatorEntity):
 
         self._attr_unique_id = "seoulbike_nearest_tracker"
         self._attr_name = "SeoulBike Nearest Station"
+        self._attr_icon = "mdi:bicycle"   # 👈 이거 추가
 
     # 📍 지도 좌표
     @property
