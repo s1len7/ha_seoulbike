@@ -1,7 +1,7 @@
 {
   "domain": "seoulbike",
   "name": "Seoul Bike",
-  "version": "0.7.20",
+  "version": "0.7.21",
   "documentation": "https://github.com/s1len7/ha_seoulbike",
   "requirements": ["haversine"],
   "dependencies": [],
