@@ -8,8 +8,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 ZONE_ENTITY_ID = "zone.seoulbike_nearest_station"
-SENSOR_ENTITY_ID = "sensor.nearest_station"  # CoordinatorEntity name 기반
-
+SENSOR_ENTITY_ID = "sensor.seoulbike_nearest_station"  # CoordinatorEntity name 기반
 
 async def async_setup_zone_manager(hass: HomeAssistant, entry):
     """Entry point from __init__.py"""

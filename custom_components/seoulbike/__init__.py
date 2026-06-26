@@ -4,8 +4,7 @@ from homeassistant.config_entries import ConfigEntry
 from .const import DOMAIN, DEFAULT_RADIUS_KM, DEFAULT_TOP_N
 from .api import SeoulBikeApi
 from .coordinator import SeoulBikeCoordinator
-from .zone_manager import async_setup_zone_manager
-
+from .zone_manager import SeoulBikeZoneManager
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -24,16 +23,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         top_n=top_n,
     )
 
+    # 1️⃣ 데이터 먼저 준비
     await coordinator.async_config_entry_first_refresh()
 
+    # 2️⃣ hass.data 먼저 세팅 (중요)
     hass.data.setdefault(DOMAIN, {})
-    # hass.data[DOMAIN][entry.entry_id] = coordinator
     hass.data[DOMAIN][entry.entry_id] = {
         "coordinator": coordinator,
         "zone_manager": None,
     }
 
+    # 3️⃣ sensor 먼저 생성
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+
+    # 4️⃣ zone manager는 sensor 의존 없이 coordinator만 사용
+    zone_manager = SeoulBikeZoneManager(
+        hass=hass,
+        coordinator=coordinator,
+    )
+    await zone_manager.async_init()
+
+    hass.data[DOMAIN][entry.entry_id]["zone_manager"] = zone_manager
 
     return True
 
