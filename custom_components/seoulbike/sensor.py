@@ -3,7 +3,7 @@ import logging
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, NEAREST_STATION_ID
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class SeoulBikeNearest(CoordinatorEntity, SensorEntity):
 
         self._attr_has_entity_name = True
         self._attr_name = "Nearest Station"
-        self._attr_unique_id = "seoulbike_nearest_station"
+        self._attr_unique_id = NEAREST_STATION_ID
         self._attr_icon = "mdi:bicycle"
 
     @property
