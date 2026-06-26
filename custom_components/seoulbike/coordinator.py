@@ -47,7 +47,8 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         if not home:
             return {
                 "stations": [],
-                "top_stations": []
+                "top_stations": [],
+                "nearest": None
             }
 
         enriched = []
@@ -62,13 +63,12 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
             )
 
             s["distance_km"] = dist
-
-            if dist <= self.radius_km:
-                enriched.append(s)
+            enriched.append(s)
 
         enriched.sort(key=lambda x: x["distance_km"])
 
         return {
             "stations": enriched,
-            "top_stations": enriched[:self.top_n]
+            "top_stations": enriched[:self.top_n],
+            "nearest": enriched[0] if enriched else None
         }

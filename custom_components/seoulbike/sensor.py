@@ -27,25 +27,27 @@ class SeoulBikeNearest(SensorEntity):
 
         data = self.coordinator.data
 
-        if not data or not data["stations"]:
+        nearest = data.get("nearest") if data else None
+
+        if not nearest:
             return None
 
-        return data["stations"][0]["name"]
+        return nearest.get("name")
 
     @property
     def extra_state_attributes(self):
 
         data = self.coordinator.data
 
-        if not data or not data["stations"]:
+        nearest = data.get("nearest") if data else None
+
+        if not nearest:
             return {}
 
-        s = data["stations"][0]
-
         return {
-            "distance_km": s.get("distance_km"),
-            "bikes": s.get("bikes"),
-            "docks": s.get("docks"),
+            "distance_km": nearest.get("distance_km"),
+            "bikes": nearest.get("bikes"),
+            "docks": nearest.get("docks"),
         }
 
 
