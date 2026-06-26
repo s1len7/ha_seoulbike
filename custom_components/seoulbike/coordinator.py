@@ -17,8 +17,9 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         self.api_client = api_client
         self.radius_km = float(radius_km)
 
+        # 🔥 핵심: hass만 positional, 나머지는 keyword
         super().__init__(
-            hass=hass,
+            hass,
             logger=_LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=60),
