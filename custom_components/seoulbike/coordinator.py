@@ -70,6 +70,7 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
         station["lat"] = lat
         station["lon"] = lon
+        station["station_id"] = station.pop("id", None)
 
         return station
 

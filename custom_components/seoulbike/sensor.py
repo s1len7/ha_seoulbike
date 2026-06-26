@@ -50,10 +50,13 @@ class SeoulBikeNearest(CoordinatorEntity, SensorEntity):
             return {}
 
         return {
+            "station_id": nearest.get("station_id"),
+            "name": nearest.get("name"),
+            "lat": float(nearest.get("lat", 0.0)),
+            "lon": float(nearest.get("lon", 0.0)),
             "distance_km": float(nearest.get("distance_km", 0.0)),
             "bikes": int(nearest.get("bikes", 0)),
             "racks": int(nearest.get("racks", 0)),
-            "station_id": nearest.get("id"),
         }
 
 
@@ -89,11 +92,13 @@ class SeoulBikeTopN(CoordinatorEntity, SensorEntity):
 
             try:
                 cleaned.append({
+                    "station_id": s.get("station_id"),
                     "name": s.get("name"),
+                    "lat": float(s.get("lat", 0.0)),
+                    "lon": float(s.get("lon", 0.0)),
                     "distance_km": float(s.get("distance_km", 0.0)),
                     "bikes": int(s.get("bikes", 0)),
                     "racks": int(s.get("racks", 0)),
-                    "id": s.get("id"),
                 })
             except (TypeError, ValueError):
                 continue
