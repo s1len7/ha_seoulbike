@@ -9,31 +9,35 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
     async_add_entities([
-        SeoulBikeTracker(coordinator)
+        SeoulBikeNearestTracker(coordinator)
     ])
 
 
-class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
+class SeoulBikeNearestTracker(CoordinatorEntity, TrackerEntity):
 
     def __init__(self, coordinator):
         super().__init__(coordinator)
-        self._attr_unique_id = "seoulbike_tracker"
+
+        self._attr_unique_id = "seoulbike_nearest_tracker"
         self._attr_name = "SeoulBike Nearest"
 
+    # ✔ Map 표시 핵심 (무조건 필요)
+    @property
+    def latitude(self):
+        nearest = (self.coordinator.data or {}).get("nearest", {})
+        return float(nearest.get("lat", 0))
+
+    @property
+    def longitude(self):
+        nearest = (self.coordinator.data or {}).get("nearest", {})
+        return float(nearest.get("lon", 0))
+
+    # ✔ state (Map에는 필수 아님, 하지만 권장)
     @property
     def state(self):
         return "home"
 
-    @property
-    def latitude(self):
-        data = self.coordinator.data.get("nearest", {})
-        return float(data.get("lat", 0))
-
-    @property
-    def longitude(self):
-        data = self.coordinator.data.get("nearest", {})
-        return float(data.get("lon", 0))
-
+    # ✔ 필수 아님이지만 HA 호환성 위해 유지
     @property
     def source_type(self):
         return "gps"
