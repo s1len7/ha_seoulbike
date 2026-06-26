@@ -1,47 +1,43 @@
-"""Coordinator."""
-
-import logging
 from datetime import timedelta
-
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from haversine import haversine
 
-_LOGGER = logging.getLogger(__name__)
+from .const import DOMAIN, DEFAULT_RADIUS_KM, TOP_N
 
 
 class SeoulBikeCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, api, lat, lon):
+    def __init__(self, hass, api_client, radius_km=DEFAULT_RADIUS_KM):
+        self.api_client = api_client
+        self.radius_km = radius_km
+
         super().__init__(
             hass,
-            _LOGGER,
-            name="seoulbike",
-            update_interval=timedelta(minutes=1),
+            logger=None,
+            name=DOMAIN,
+            update_interval=timedelta(seconds=60),
         )
 
-        self.api = api
-        self.lat = lat
-        self.lon = lon
-
     async def _async_update_data(self):
-        try:
-            stations = await self.api.get_all_stations()
+        stations = await self.api_client.get_stations()
 
-            if not stations:
-                return {}
+        user_location = await self.api_client.get_user_location()
 
-            nearest = min(
-                stations,
-                key=lambda s: haversine(
-                    (self.lat, self.lon),
-                    (s["lat"], s["lon"]),
-                ),
+        enriched = []
+
+        for s in stations:
+            dist = haversine(
+                (user_location["lat"], user_location["lon"]),
+                (s["lat"], s["lon"])
             )
 
-            return {
-                "stations": stations,
-                "nearest": nearest,
-            }
+            s["distance_km"] = dist
 
-        except Exception as e:
-            _LOGGER.error(f"SeoulBike update failed: {e}")
-            return {}
+            if dist <= self.radius_km:
+                enriched.append(s)
+
+        enriched.sort(key=lambda x: x["distance_km"])
+
+        return {
+            "stations": enriched,
+            "top5": enriched[:TOP_N] if enriched else []
+        }
