@@ -17,11 +17,12 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         self.api_client = api_client
         self.radius_km = float(radius_km)
 
+        # 🔥 핵심: positional only
         super().__init__(
             hass,
             _LOGGER,
-            name=DOMAIN,
-            update_interval=timedelta(seconds=60),
+            DOMAIN,
+            timedelta(seconds=60),
         )
 
     def _get_home(self):
