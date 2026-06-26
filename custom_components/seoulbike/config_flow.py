@@ -37,7 +37,7 @@ class SeoulBikeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema({
             vol.Required(CONF_API_KEY): str,
-            vol.Optional(CONF_RADIUS_KM, default=DEFAULT_RADIUS_KM): float,
+            vol.Optional(CONF_RADIUS_KM, default=DEFAULT_RADIUS_KM): vol.Coerce(float),
             vol.Optional(CONF_TOP_N, default=DEFAULT_TOP_N): vol.Coerce(int),
         })
 

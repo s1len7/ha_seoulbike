@@ -27,46 +27,60 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         )
 
     # -----------------------------
-    # HOME 좌표 (HA 기준)
+    # SAFE CONVERT
     # -----------------------------
-    def _get_home(self):
-
-        lat = self.hass.config.latitude
-        lon = self.hass.config.longitude
+    def _normalize_coord(self, value):
 
         try:
-            lat = float(lat)
-            lon = float(lon)
+            if value is None:
+                return None
+            return float(value)
         except (TypeError, ValueError):
             return None
 
+    # -----------------------------
+    # HOME (HA CONFIG 기준)
+    # -----------------------------
+    def _get_home(self):
+
+        lat = self._normalize_coord(self.hass.config.latitude)
+        lon = self._normalize_coord(self.hass.config.longitude)
+
+        if lat is None or lon is None:
+            _LOGGER.error("[SeoulBike] Home coordinate is invalid")
+            return None
+
+        # sanity check
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-            _LOGGER.warning(f"[SeoulBike] Invalid HOME coords: lat={lat}, lon={lon}")
+            _LOGGER.error(f"[SeoulBike] Home out of range: lat={lat}, lon={lon}")
             return None
 
         return {"lat": lat, "lon": lon}
 
     # -----------------------------
-    # 좌표 검증
+    # STATION VALIDATION
     # -----------------------------
     def _validate_station(self, s):
 
-        try:
-            lat = float(s.get("lat"))
-            lon = float(s.get("lon"))
-        except (TypeError, ValueError):
+        lat = self._normalize_coord(s.get("lat"))
+        lon = self._normalize_coord(s.get("lon"))
+
+        if lat is None or lon is None:
             return None
 
-        # 기본 범위 체크
+        # WGS84 sanity check
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-            _LOGGER.debug(f"[SeoulBike] Out of range station skipped: {s}")
+            _LOGGER.warning(
+                f"[SeoulBike] Invalid coord skipped: "
+                f"name={s.get('name')}, lat={lat}, lon={lon}"
+            )
             return None
 
-        # 🔥 lat/lon swap 감지 (한국 기준 휴리스틱)
-        # lat이 100 이상이고 lon이 40 근처면 swap 의심
-        if lat > 90 and abs(lon) < 90:
+        # lat/lon swap detection (heuristic)
+        if abs(lat) > 90 and abs(lon) <= 90:
             _LOGGER.warning(
-                f"[SeoulBike] Lat/Lon swapped detected -> fixing: lat={lat}, lon={lon}"
+                f"[SeoulBike] Lat/Lon swap detected fixed: "
+                f"name={s.get('name')}, lat={lat}, lon={lon}"
             )
             lat, lon = lon, lat
 
@@ -84,8 +98,11 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         home = self._get_home()
 
         if not home:
-            _LOGGER.error("[SeoulBike] Home coordinates invalid")
-            return {"stations": [], "top_stations": [], "nearest": None}
+            return {
+                "stations": [],
+                "top_stations": [],
+                "nearest": None,
+            }
 
         enriched = []
 
@@ -97,35 +114,40 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
             try:
                 dist = distance(
-                    home["lat"],
-                    home["lon"],
-                    s["lat"],
-                    s["lon"]
+                    float(home["lat"]),
+                    float(home["lon"]),
+                    float(s["lat"]),
+                    float(s["lon"]),
                 )
 
                 dist = float(dist)
 
-                # 🔥 비정상 거리 탐지 로그
-                if dist > 100:
-                    _LOGGER.warning(
-                        f"[SeoulBike] Large distance detected: {dist} km "
-                        f"(home={home}, station={s.get('name')})"
+                # 🚨 폭주 방지 (서울 기준 현실 컷)
+                if dist > 200:
+                    _LOGGER.error(
+                        f"[SeoulBike] CORRUPT DISTANCE DETECTED: {dist} km | "
+                        f"home={home} | station={s.get('name')} | "
+                        f"lat={s['lat']} lon={s['lon']}"
                     )
+                    continue
+
+                if dist < 0:
+                    continue
 
                 s["distance_km"] = dist
                 enriched.append(s)
 
             except Exception as e:
-                _LOGGER.debug(f"[SeoulBike] Distance calc error: {e}")
+                _LOGGER.debug(f"[SeoulBike] distance calc error: {e}")
                 continue
 
         enriched.sort(key=lambda x: x.get("distance_km", float("inf")))
 
-        # 🔥 샘플 로그 (첫 실행 때만 확인용)
+        # nearest sample log
         if enriched:
             _LOGGER.info(
-                f"[SeoulBike] NEAREST SAMPLE: "
-                f"{enriched[0].get('name')} = {enriched[0].get('distance_km')} km"
+                f"[SeoulBike] NEAREST: {enriched[0].get('name')} "
+                f"= {enriched[0].get('distance_km')} km"
             )
 
         return {
