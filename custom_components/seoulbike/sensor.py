@@ -8,7 +8,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities([
         SeoulBikeNearest(coordinator),
-        SeoulBikeTop5(coordinator),
+        SeoulBikeTopN(coordinator),
     ])
 
 
@@ -17,6 +17,10 @@ class SeoulBikeNearest(SensorEntity):
     def __init__(self, coordinator):
         self.coordinator = coordinator
         self._attr_name = "SeoulBike Nearest"
+
+    @property
+    def unique_id(self):
+        return "seoulbike_nearest"
 
     @property
     def state(self):
@@ -45,11 +49,15 @@ class SeoulBikeNearest(SensorEntity):
         }
 
 
-class SeoulBikeTop5(SensorEntity):
+class SeoulBikeTopN(SensorEntity):
 
     def __init__(self, coordinator):
         self.coordinator = coordinator
-        self._attr_name = "SeoulBike Top5"
+        self._attr_name = "SeoulBike Top N"
+
+    @property
+    def unique_id(self):
+        return "seoulbike_top_n"
 
     @property
     def state(self):
@@ -59,7 +67,7 @@ class SeoulBikeTop5(SensorEntity):
         if not data:
             return 0
 
-        return len(data.get("top5", []))
+        return len(data.get("top_stations", []))
 
     @property
     def extra_state_attributes(self):
@@ -70,5 +78,5 @@ class SeoulBikeTop5(SensorEntity):
             return {}
 
         return {
-            "stations": data.get("top5", [])
+            "stations": data.get("top_stations", [])
         }
