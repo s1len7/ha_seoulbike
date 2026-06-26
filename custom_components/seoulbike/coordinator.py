@@ -101,8 +101,9 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
                     unit=Unit.KILOMETERS,
                 )
 
-                station["distance_km"] = dist
-                enriched.append(station)
+                if dist <= self.radius_km:
+                    station["distance_km"] = dist
+                    enriched.append(station)
 
             except Exception as e:
                 _LOGGER.debug(f"[SeoulBike] Distance calculation failed: {e}")
