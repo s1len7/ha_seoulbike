@@ -1,9 +1,11 @@
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
 
 from .const import DOMAIN, DEFAULT_RADIUS_KM, DEFAULT_TOP_N
 from .api import SeoulBikeApi
 from .coordinator import SeoulBikeCoordinator
+from .zone_manager import async_setup_zone_manager
+
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -25,7 +27,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = coordinator
+    # hass.data[DOMAIN][entry.entry_id] = coordinator
+    hass.data[DOMAIN][entry.entry_id] = {
+        "coordinator": coordinator,
+        "zone_manager": None,
+    }
 
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 

@@ -2,11 +2,8 @@
   "domain": "seoulbike",
   "name": "Seoul Bike",
   "version": "0.8.0",
-  "requirements": [
-    "haversine"
-  ],
+  "requirements": ["haversine"],
   "dependencies": [],
   "codeowners": [],
-  "config_flow": true,
-  "frontend": true
+  "config_flow": true
 }
