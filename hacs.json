@@ -2,5 +2,6 @@
   "name": "따릉이(Seoul Bike)",
   "content_in_root": false,
   "render_readme": true,
-  "country": "KR"
+  "country": "KR",
+  "icon": "https://raw.githubusercontent.com/s1len7/ha_seoulbike/main/icon.png"
 }
