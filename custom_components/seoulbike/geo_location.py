@@ -51,7 +51,7 @@ class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
 
         self._attr_unique_id = f"{DOMAIN}.geo_location.{self._station_id}"
         self._attr_name = station.get("name") or self._station_id
-        self._attr_icon = "mdi:bicycle"
+        self._attr_icon = "mdi:map-marker"
 
     @property
     def latitude(self):
