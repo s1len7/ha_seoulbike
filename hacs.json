@@ -3,5 +3,6 @@
   "content_in_root": false,
   "render_readme": true,
   "country": "KR",
-  "icon": "https://raw.githubusercontent.com/s1len7/ha_seoulbike/main/icon.png"
+  "icon": "https://raw.githubusercontent.com/s1len7/ha_seoulbike/main/icon.png",
+  "description": "Live Seoul Bike(따릉이) station tracking integration for Home Assistant"
 }
