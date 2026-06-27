@@ -33,9 +33,13 @@ async def async_setup_entry(hass, entry, async_add_entities):
         if new_entities:
             async_add_entities(new_entities)
 
+        # 🔥 tracker 활성 유지 (핵심)
+        for entity in new_entities:
+            entity.async_write_ha_state()
+
     create_entities()
 
-    coordinator.async_add_listener(lambda: create_entities())
+    coordinator.async_add_listener(create_entities)
 
 
 class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
@@ -50,6 +54,9 @@ class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
         self._attr_unique_id = f"{DOMAIN}.device_tracker.{station_id}"
         self._attr_name = station.get("name") or station_id
         self._attr_icon = "mdi:bicycle"
+
+        # 🔥 반드시 필요 (Map 인식용)
+        self._attr_source_type = "gps"
 
     @property
     def latitude(self):
