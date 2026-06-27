@@ -1,4 +1,6 @@
 """Seoul Bike API."""
+# 서울시 공공자전거 따릉이 실시간 대여정보
+# https://data.seoul.go.kr/dataList/OA-15493/A/1/datasetView.do
 
 import aiohttp
 
