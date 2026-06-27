@@ -2,13 +2,13 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
+from .marker import build_marker_svg, get_availability_marker
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
 
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
-    entities = {}
     known = set()
 
     def create():
@@ -51,8 +51,8 @@ class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
 
         self._attr_unique_id = f"{DOMAIN}.geo_location.{self._station_id}"
         self._attr_name = station.get("name") or self._station_id
+        self._attr_icon = "mdi:bicycle"
 
-    # 📍 latitude
     @property
     def latitude(self):
         station = self._get_station()
@@ -61,7 +61,6 @@ class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
         except (TypeError, ValueError):
             return None
 
-    # 📍 longitude
     @property
     def longitude(self):
         station = self._get_station()
@@ -70,16 +69,15 @@ class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
         except (TypeError, ValueError):
             return None
 
-    # 📌 state
     @property
     def state(self):
         station = self._get_station()
         return station.get("bikes")
 
-    # 📌 attributes
     @property
     def extra_state_attributes(self):
         station = self._get_station()
+        marker_color, availability = get_availability_marker(station.get("bikes"))
 
         return {
             "station_id": station.get("station_id"),
@@ -88,9 +86,16 @@ class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
             "bikes": station.get("bikes"),
             "racks": station.get("racks"),
             "availability_ratio": station.get("availability_ratio"),
+            "availability": availability,
+            "marker_color": marker_color,
             "latitude": station.get("lat"),
             "longitude": station.get("lon"),
         }
+
+    @property
+    def entity_picture(self):
+        station = self._get_station()
+        return build_marker_svg(station.get("bikes"))
 
     def _get_station(self):
         data = self.coordinator.data or {}
