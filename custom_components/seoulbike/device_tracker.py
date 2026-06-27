@@ -26,34 +26,78 @@ async def async_setup_entry(hass, entry, async_add_entities):
             if station_id in entities:
                 continue
 
-            entity = SeoulBikeTracker(coordinator, station_id, s)
+            entity = SeoulBikeTracker(coordinator, station_id)
             entities[station_id] = entity
             new_entities.append(entity)
 
         if new_entities:
             async_add_entities(new_entities)
 
-        for entity in new_entities:
-            entity.async_write_ha_state()
-
     create_entities()
-
     coordinator.async_add_listener(create_entities)
 
 
+# =========================
+# 🎨 SVG 마커 생성
+# =========================
+def build_marker_svg(bikes, racks):
+
+    try:
+        bikes = int(bikes or 0)
+        racks = int(racks or 0)
+    except Exception:
+        bikes = 0
+        racks = 0
+
+    ratio = (bikes / racks) if racks else 0
+
+    if bikes == 0:
+        color = "#e74c3c"
+    elif ratio < 0.3:
+        color = "#f39c12"
+    else:
+        color = "#2ecc71"
+
+    svg = f"""
+    <svg width="64" height="64" viewBox="0 0 64 64"
+         xmlns="http://www.w3.org/2000/svg">
+
+        <circle cx="32" cy="32" r="28"
+                fill="white"
+                stroke="{color}"
+                stroke-width="6"/>
+
+        <text x="32" y="30"
+              text-anchor="middle"
+              font-size="18">🚲</text>
+
+        <text x="32" y="48"
+              text-anchor="middle"
+              font-size="14"
+              font-weight="bold"
+              fill="{color}">{bikes}</text>
+
+    </svg>
+    """
+
+    return "data:image/svg+xml;charset=utf-8," + svg.replace("\n", "")
+
+
+# =========================
+# 🚲 Tracker Entity
+# =========================
 class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
 
-    def __init__(self, coordinator, station_id, station):
+    def __init__(self, coordinator, station_id):
 
         super().__init__(coordinator)
 
         self._station_id = station_id
-        self._station = station
 
         self._attr_unique_id = f"{DOMAIN}.device_tracker.{station_id}"
-        self._attr_name = station.get("name") or station_id
+        self._attr_name = station_id
 
-        # 🚲 mdi 유지 (요구사항)
+        # UI용
         self._attr_icon = "mdi:bicycle"
 
         # 지도 필수
@@ -62,54 +106,33 @@ class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
     # 📍 위치
     @property
     def latitude(self):
+        s = self._get_station()
         try:
-            return float(self._get_station().get("lat"))
-        except Exception:
+            return float(s.get("lat"))
+        except:
             return None
 
     @property
     def longitude(self):
+        s = self._get_station()
         try:
-            return float(self._get_station().get("lon"))
-        except Exception:
+            return float(s.get("lon"))
+        except:
             return None
 
-    # 📊 상태 (자전거 수)
+    # 📊 상태
     @property
     def state(self):
+        s = self._get_station()
         try:
-            return int(self._get_station().get("bikes") or 0)
-        except Exception:
+            return int(s.get("bikes") or 0)
+        except:
             return 0
 
-    # 🎨 핵심: 상태 기반 색상 (mdi에도 적용됨)
-    @property
-    def icon_color(self):
-
-        s = self._get_station()
-
-        try:
-            bikes = int(s.get("bikes") or 0)
-            racks = int(s.get("racks") or 0)
-        except Exception:
-            bikes = 0
-            racks = 0
-
-        ratio = (bikes / racks) if racks else 0
-
-        if bikes == 0:
-            return "#e74c3c"   # red
-        elif ratio < 0.3:
-            return "#f39c12"   # orange
-        else:
-            return "#2ecc71"   # green
-
-    # 📦 popup 정보
+    # 📦 attributes
     @property
     def extra_state_attributes(self):
-
         s = self._get_station()
-
         return {
             "station_id": s.get("station_id"),
             "name": s.get("name"),
@@ -121,6 +144,17 @@ class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
             "longitude": s.get("lon"),
         }
 
+    # 🚲 지도 마커 (핵심)
+    @property
+    def entity_picture(self):
+
+        s = self._get_station()
+
+        return build_marker_svg(
+            s.get("bikes"),
+            s.get("racks"),
+        )
+
     # 🔍 최신 데이터
     def _get_station(self):
 
@@ -131,4 +165,4 @@ class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
             if s.get("station_id") == self._station_id:
                 return s
 
-        return self._station
+        return {}
