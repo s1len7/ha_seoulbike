@@ -1,4 +1,4 @@
-from homeassistant.components.geo_location import GeolocationEntity
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -9,9 +9,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
     entities = {}
-    last_ids = set()
+    known = set()
 
-    def create_entities():
+    def create():
         data = coordinator.data or {}
         stations = data.get("top_stations", [])
 
@@ -22,27 +22,25 @@ async def async_setup_entry(hass, entry, async_add_entities):
             if not station_id:
                 continue
 
-            if station_id in last_ids:
+            if station_id in known:
                 continue
 
             entity = SeoulBikeGeoLocation(coordinator, s)
-            last_ids.add(station_id)
+            known.add(station_id)
             new_entities.append(entity)
 
         if new_entities:
             async_add_entities(new_entities)
 
-    # 초기 생성
-    create_entities()
+    create()
 
-    # 업데이트 시 추가
-    def _update_listener():
-        create_entities()
+    def _update():
+        create()
 
-    coordinator.async_add_listener(_update_listener)
+    coordinator.async_add_listener(_update)
 
 
-class SeoulBikeGeoLocation(CoordinatorEntity, GeolocationEntity):
+class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
 
     def __init__(self, coordinator, station):
 
@@ -72,7 +70,7 @@ class SeoulBikeGeoLocation(CoordinatorEntity, GeolocationEntity):
         except (TypeError, ValueError):
             return None
 
-    # 📌 state (지도에서는 설명용)
+    # 📌 state
     @property
     def state(self):
         station = self._get_station()
@@ -94,7 +92,6 @@ class SeoulBikeGeoLocation(CoordinatorEntity, GeolocationEntity):
             "longitude": station.get("lon"),
         }
 
-    # 🔥 coordinator fallback 안정성
     def _get_station(self):
         data = self.coordinator.data or {}
         stations = data.get("top_stations", [])
