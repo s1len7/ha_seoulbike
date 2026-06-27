@@ -64,13 +64,13 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
             _LOGGER.warning(
                 f"[SeoulBike] Invalid coord skipped: "
-                f"name={station.get('name')}, lat={lat}, lon={lon}"
+                f"name={station.get("station_name")}, lat={lat}, lon={lon}"
             )
             return None
 
         station["lat"] = lat
         station["lon"] = lon
-        station["station_id"] = station.pop("id", None)
+        station["station_id"] = station.pop("station_id", None)
 
         return station
 

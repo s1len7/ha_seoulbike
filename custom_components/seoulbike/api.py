@@ -50,8 +50,8 @@ class SeoulBikeApi:
 
                 stations.extend(
                     {
-                        "id": s.get("stationId"),
-                        "name": s.get("stationName"),
+                        "station_id": s.get("stationId"),
+                        "station_name": s.get("stationName"),
                         "lat": float(s.get("stationLatitude", 0)),
                         "lon": float(s.get("stationLongitude", 0)),
                         "bikes": int(s.get("parkingBikeTotCnt", 0)),

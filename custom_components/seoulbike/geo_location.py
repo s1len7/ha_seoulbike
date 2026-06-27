@@ -50,7 +50,7 @@ class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
         self._station = station
 
         self._attr_unique_id = f"{DOMAIN}.geo_location.{self._station_id}"
-        self._attr_name = station.get("name") or self._station_id
+        self._attr_name = station.get("station_name") or self._station_id
         self._attr_icon = "mdi:map-marker"
 
     @property
@@ -81,7 +81,7 @@ class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
 
         return {
             "station_id": station.get("station_id"),
-            "name": station.get("name"),
+            "station_name": station.get("station_name"),
             "distance_km": station.get("distance_km"),
             "bikes": station.get("bikes"),
             "racks": station.get("racks"),
