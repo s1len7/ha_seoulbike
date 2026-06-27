@@ -1,18 +1,3 @@
-from homeassistant.components.device_tracker import TrackerEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
-from .const import DOMAIN
-
-
-async def async_setup_entry(hass, entry, async_add_entities):
-
-    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-
-    async_add_entities([
-        SeoulBikeNearestStationTracker(coordinator)
-    ])
-
-
 class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
 
     def __init__(self, coordinator):
@@ -33,15 +18,14 @@ class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
         nearest = (self.coordinator.data or {}).get("nearest", {})
         return nearest.get("lon")
 
-    # 📌 상태 (Map 표시용 + 의미값)
+    # 📌 상태 = 잔여 자전거 수 (마커 숫자)
     @property
     def state(self):
         nearest = (self.coordinator.data or {}).get("nearest", {})
 
-        bikes = nearest.get("bikes", 0)
-
         try:
-            return int(bikes)
+            bikes = int(nearest.get("bikes") or 0)
+            return max(bikes, 0)
         except (TypeError, ValueError):
             return 0
 
@@ -64,24 +48,28 @@ class SeoulBikeNearestStationTracker(TrackerEntity, CoordinatorEntity):
     @property
     def source_type(self):
         return "gps"
-    
-    # # 🚲 핵심: Map marker 이미지 (S 제거용)
-    # @property
-    # def entity_picture(self):
-    #     bikes = (self.coordinator.data or {}).get("nearest", {}).get("bikes", 0)
 
-    #     try:
-    #         bikes = int(bikes)
-    #     except (TypeError, ValueError):
-    #         bikes = 0
+    # 🚲 핵심: 마커 아이콘 + 상태별 색상
+    @property
+    def entity_picture(self):
+        nearest = (self.coordinator.data or {}).get("nearest", {})
 
-    #     # ✔ 상태에 따라 아이콘 변화
-    #     if bikes == 0:
-    #         # 비어있음 → 빨간 자전거
-    #         return "https://cdn-icons-png.flaticon.com/512/854/854878.png"
-    #     elif bikes <= 3:
-    #         # 부족
-    #         return "https://cdn-icons-png.flaticon.com/512/854/854894.png"
-    #     else:
-    #         # 충분
-    #         return "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f6b2.png"
+        try:
+            bikes = int(nearest.get("bikes") or 0)
+        except (TypeError, ValueError):
+            bikes = 0
+
+        # 🎯 기본: 심플한 라인 자전거 (고정)
+        base_icon = "https://cdn.jsdelivr.net/npm/lucide-static/icons/bike.svg"
+        return base_icon
+        # # 🔴 없음 → 빨간 느낌 (SVG 자체가 아니라 테두리 느낌용 교체)
+        # if bikes == 0:
+        #     return base_icon
+
+        # # 🟠 부족
+        # elif bikes <= 3:
+        #     return base_icon
+
+        # # 🟢 충분
+        # else:
+        #     return base_icon
