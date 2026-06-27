@@ -47,7 +47,7 @@ class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
         self._station_id = station_id
 
         self._attr_unique_id = f"{DOMAIN}.device_tracker.{station_id}"
-        self._attr_name = station_id
+        self._attr_name = self._get_station().get("name")
         self._attr_icon = "mdi:bicycle"
         self._attr_source_type = "gps"
 
