@@ -34,10 +34,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "coordinator": coordinator,
     }
 
-    # 6️⃣ sensor + device_tracker 등록
+    # 6️⃣ platforms 등록 (핵심 수정 부분)
     await hass.config_entries.async_forward_entry_setups(
         entry,
-        ["sensor", "device_tracker"]
+        ["sensor", "device_tracker", "geo_location"]
     )
 
     return True
@@ -45,10 +45,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
-    # sensor + device_tracker unload
+    # platforms unload
     await hass.config_entries.async_unload_platforms(
         entry,
-        ["sensor", "device_tracker"]
+        ["sensor", "device_tracker", "geo_location"]
     )
 
     hass.data[DOMAIN].pop(entry.entry_id, None)
