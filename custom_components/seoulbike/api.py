@@ -1,6 +1,9 @@
 """Seoul Bike API."""
 # 서울시 공공자전거 따릉이 실시간 대여정보
 # https://data.seoul.go.kr/dataList/OA-15493/A/1/datasetView.do
+#
+# TODO:
+# - except Exception 대신 aiohttp.ClientError, asyncio.TimeoutError 등을 구분하여 처리하기
 
 import logging
 
@@ -25,7 +28,19 @@ class SeoulBikeApi:
 
                     data = await resp.json()
 
-                    return "rentBikeStatus" in data
+                    result = data.get("RESULT", {})
+                    code = result.get("CODE")
+                    message = result.get("MESSAGE")
+
+                    if code != "INFO-000":
+                        _LOGGER.error(f"API key validation failed: {code} ({message})")
+                        return False
+
+                    if "rentBikeStatus" not in data:
+                        _LOGGER.error("API response missing 'rentBikeStatus'")
+                        return False
+
+                    return True
 
         except Exception as err:
             _LOGGER.error(f"API key validation failed: {err}")
@@ -46,17 +61,27 @@ class SeoulBikeApi:
                     async with session.get(url, timeout=30) as resp:
                         if resp.status != 200:
                             _LOGGER.error(f"Failed to fetch stations {start}-{end}: HTTP {resp.status}")
-                            break
+                            return []
 
                         data = await resp.json()
 
+                    result = data.get("RESULT", {})
+                    code = result.get("CODE")
+                    message = result.get("MESSAGE")
+
+                    if code != "INFO-000":
+                        _LOGGER.error(f"Failed to fetch stations {start}-{end}: {code} ({message})")
+                        return []
+
                     bike_data = data.get("rentBikeStatus")
                     if not bike_data:
-                        break
+                        _LOGGER.error("API response missing 'rentBikeStatus'")
+                        return []
 
                     rows = bike_data.get("row", [])
                     if not isinstance(rows, list):
-                        break
+                        _LOGGER.error("API response 'rentBikeStatus.row' is not a list")
+                        return []
 
                     stations.extend(
                         {
