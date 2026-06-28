@@ -28,16 +28,17 @@ class SeoulBikeApi:
 
                     data = await resp.json()
 
-                    result = data.get("RESULT", {})
+                    bike_data = data.get("rentBikeStatus")
+                    if not bike_data:
+                        _LOGGER.error("API response missing 'rentBikeStatus'")
+                        return False
+
+                    result = bike_data.get("RESULT", {})
                     code = result.get("CODE")
                     message = result.get("MESSAGE")
 
                     if code != "INFO-000":
                         _LOGGER.error(f"API key validation failed: {code} ({message})")
-                        return False
-
-                    if "rentBikeStatus" not in data:
-                        _LOGGER.error("API response missing 'rentBikeStatus'")
                         return False
 
                     return True
@@ -65,17 +66,17 @@ class SeoulBikeApi:
 
                         data = await resp.json()
 
-                    result = data.get("RESULT", {})
+                    bike_data = data.get("rentBikeStatus")
+                    if not bike_data:
+                        _LOGGER.error("API response missing 'rentBikeStatus'")
+                        return []
+
+                    result = bike_data.get("RESULT", {})
                     code = result.get("CODE")
                     message = result.get("MESSAGE")
 
                     if code != "INFO-000":
                         _LOGGER.error(f"Failed to fetch stations {start}-{end}: {code} ({message})")
-                        return []
-
-                    bike_data = data.get("rentBikeStatus")
-                    if not bike_data:
-                        _LOGGER.error("API response missing 'rentBikeStatus'")
                         return []
 
                     rows = bike_data.get("row", [])
