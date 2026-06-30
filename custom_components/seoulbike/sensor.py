@@ -39,7 +39,7 @@ class SeoulBikeNearestStation(CoordinatorEntity, SensorEntity):
         if not nearest:
             return None
 
-        return nearest.get("name")
+        return nearest.get("station_name")
 
     @property
     def extra_state_attributes(self):
@@ -52,12 +52,12 @@ class SeoulBikeNearestStation(CoordinatorEntity, SensorEntity):
 
         return {
             "station_id": nearest.get("station_id"),
-            "name": nearest.get("name"),
-            "lat": float(nearest.get("lat", 0.0)),
-            "lon": float(nearest.get("lon", 0.0)),
-            "distance_km": float(nearest.get("distance_km", 0.0)),
-            "bikes": int(nearest.get("bikes", 0)),
-            "racks": int(nearest.get("racks", 0)),
+            "station_name": nearest.get("station_name"),
+            "lat": nearest.get("lat"),
+            "lon": nearest.get("lon"),
+            "distance_km": nearest.get("distance_km"),
+            "bikes": nearest.get("bikes"),
+            "racks": nearest.get("racks"),
         }
 
 
@@ -90,18 +90,15 @@ class SeoulBikeNearbyStations(CoordinatorEntity, SensorEntity):
         cleaned = []
 
         for s in top:
-            try:
-                cleaned.append({
-                    "station_id": s.get("station_id"),
-                    "name": s.get("name"),
-                    "lat": float(s.get("lat", 0.0)),
-                    "lon": float(s.get("lon", 0.0)),
-                    "distance_km": float(s.get("distance_km", 0.0)),
-                    "bikes": int(s.get("bikes", 0)),
-                    "racks": int(s.get("racks", 0)),
-                })
-            except (TypeError, ValueError):
-                continue
+            cleaned.append({
+                "station_id": s.get("station_id"),
+                "station_name": s.get("station_name"),
+                "lat": s.get("lat"),
+                "lon": s.get("lon"),
+                "distance_km": s.get("distance_km"),
+                "bikes": s.get("bikes"),
+                "racks": s.get("racks"),
+            })
 
         return {
             "stations": cleaned
