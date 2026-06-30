@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
 
-from haversine import Unit, haversine
+from homeassistant.util.location import distance
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN, DEFAULT_RADIUS_KM, DEFAULT_TOP_N
@@ -27,7 +27,6 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         )
 
     def _normalize_coord(self, value):
-
         try:
             if value is None:
                 return None
@@ -41,7 +40,7 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         lon = self._normalize_coord(self.hass.config.longitude)
 
         if lat is None or lon is None:
-            _LOGGER.error("[SeoulBike] Home coordinate is invalid")
+            _LOGGER.error(f"[SeoulBike] Home coordinate is invalid")
             return None
 
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
@@ -64,7 +63,7 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
             _LOGGER.warning(
                 f"[SeoulBike] Invalid coord skipped: "
-                f"name={station.get("station_name")}, lat={lat}, lon={lon}"
+                f"name={station.get('station_name')}, lat={lat}, lon={lon}"
             )
             return None
 
@@ -76,10 +75,16 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
 
+        _LOGGER.warning(f"🚲 SeoulBike update started")
+
         stations = await self.api_client.get_all_stations()
+
+        _LOGGER.warning(f"📡 stations fetched: {len(stations)}")
+
         home = self._get_home()
 
         if not home:
+            _LOGGER.error(f"[SeoulBike] Home not configured")
             return {
                 "stations": [],
                 "top_stations": [],
@@ -96,11 +101,12 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
                 continue
 
             try:
-                dist = haversine(
-                    (home["lat"], home["lon"]),
-                    (station["lat"], station["lon"]),
-                    unit=Unit.KILOMETERS,
-                )
+                dist = distance(
+                    home["lat"],
+                    home["lon"],
+                    station["lat"],
+                    station["lon"],
+                ) / 1000.
 
                 if dist <= self.radius_km:
                     station["distance_km"] = dist
@@ -111,8 +117,19 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
         enriched.sort(key=lambda x: x["distance_km"])
 
-        return {
+        _LOGGER.warning(
+            f"📍 filtered stations: {len(enriched)} / top_n={self.top_n}"
+        )
+
+        result = {
             "stations": enriched,
             "top_stations": enriched[: self.top_n],
             "nearest": enriched[0] if enriched else None,
         }
+
+        _LOGGER.warning(
+            f"✅ SeoulBike update done: stations={len(enriched)} nearest="
+            f"{enriched[0]['station_name'] if enriched else None}"
+        )
+
+        return result

@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach HA Debug",
+      "type": "python",
+      "request": "attach",
+
+      "preLaunchTask": "HA Restart",
+
+      "connect": {
+        "host": "localhost",
+        "port": 2015
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/custom_components/seoulbike",
+          "remoteRoot": "/config/custom_components/seoulbike"
+        }
+      ],
+      "justMyCode": true,
+      "subProcess": true
+    }
+  ]
+}

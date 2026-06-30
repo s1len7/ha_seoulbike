@@ -1,8 +1,8 @@
 {
   "domain": "seoulbike",
   "name": "따릉이(Seoul Bike)",
-  "version": "0.8.1",
-  "requirements": ["haversine"],
+  "version": "0.8.4",
+  "requirements": [],
   "dependencies": [],
   "codeowners": [],
   "config_flow": true

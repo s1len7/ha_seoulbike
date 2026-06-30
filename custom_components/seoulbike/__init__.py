@@ -1,12 +1,28 @@
+import logging
+import debugpy
+
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.loader import async_get_integration
 
 from .const import DOMAIN, DEFAULT_RADIUS_KM, DEFAULT_TOP_N, CONF_API_KEY
-from .api import SeoulBikeApi
 from .coordinator import SeoulBikeCoordinator
+from .src.seoul_bike_api import SeoulBikeApi
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
+    integration = await async_get_integration(hass, DOMAIN)
+    _LOGGER.warning(f"🚲 SeoulBike v{integration.version} integration started (async_setup_entry)")
+
+    # 🐞 DEBUGPY ATTACH (2015)
+    try:
+        debugpy.listen(("0.0.0.0", 2015))
+        # debugpy.wait_for_client()
+        _LOGGER.warning("🐞 Debugger listening on port 2015")
+    except Exception as e:
+        _LOGGER.debug(f"Debugpy already started or failed: {e}")
 
     # 1️⃣ API key
     api_key = entry.data[CONF_API_KEY]
@@ -34,18 +50,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "coordinator": coordinator,
     }
 
-    # 6️⃣ platforms 등록 (핵심 수정 부분)
+    # 6️⃣ platforms 등록
     await hass.config_entries.async_forward_entry_setups(
         entry,
         ["sensor", "device_tracker", "geo_location"]
     )
+
+    _LOGGER.warning("🚲 SeoulBike setup completed")
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
-    # platforms unload
+    _LOGGER.warning("🚲 SeoulBike unloading")
+
     await hass.config_entries.async_unload_platforms(
         entry,
         ["sensor", "device_tracker", "geo_location"]
