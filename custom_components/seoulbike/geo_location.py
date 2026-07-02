@@ -2,7 +2,6 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
-from .marker import build_marker_svg, get_availability_marker
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -12,20 +11,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
     known = set()
 
     def create():
+
         data = coordinator.data or {}
         stations = data.get("top_stations", [])
 
         new_entities = []
 
-        for s in stations:
-            station_id = s.get("station_id")
-            if not station_id:
-                continue
+        for station in stations:
+
+            station_id = station.station_id
 
             if station_id in known:
                 continue
 
-            entity = SeoulBikeGeoLocation(coordinator, s)
+            entity = SeoulBikeGeoLocation(coordinator, station_id)
             known.add(station_id)
             new_entities.append(entity)
 
@@ -33,76 +32,69 @@ async def async_setup_entry(hass, entry, async_add_entities):
             async_add_entities(new_entities)
 
     create()
-
-    def _update():
-        create()
-
-    coordinator.async_add_listener(_update)
+    coordinator.async_add_listener(create)
 
 
 class SeoulBikeGeoLocation(CoordinatorEntity, Entity):
 
-    def __init__(self, coordinator, station):
+    def __init__(self, coordinator, station_id):
 
         super().__init__(coordinator)
 
-        self._station_id = station.get("station_id")
-        self._station = station
+        self._station_id = station_id
 
-        self._attr_unique_id = f"{DOMAIN}.geo_location.{self._station_id}"
-        self._attr_name = station.get("station_name") or self._station_id
+        self._attr_unique_id = f"{DOMAIN}.geo_location.{station_id}"
+        self._attr_name = self._get_station().station_name if self._get_station() else None
         self._attr_icon = "mdi:map-marker"
+
+    def _get_station(self):
+
+        data = self.coordinator.data or {}
+
+        return data.get("stations_by_id", {}).get(self._station_id)
 
     @property
     def latitude(self):
+
         station = self._get_station()
-        try:
-            return float(station.get("lat"))
-        except (TypeError, ValueError):
-            return None
+        return station.lat if station else None
 
     @property
     def longitude(self):
+
         station = self._get_station()
-        try:
-            return float(station.get("lon"))
-        except (TypeError, ValueError):
-            return None
+        return station.lon if station else None
 
     @property
     def state(self):
+
         station = self._get_station()
-        return station.get("bikes")
+        return station.parking_bike_total_count if station else 0
 
     @property
     def extra_state_attributes(self):
+
         station = self._get_station()
-        marker_color, availability = get_availability_marker(station.get("bikes"))
+
+        if not station:
+            return {}
 
         return {
-            "station_id": station.get("station_id"),
-            "station_name": station.get("station_name"),
-            "distance_km": station.get("distance_km"),
-            "bikes": station.get("bikes"),
-            "racks": station.get("racks"),
-            "availability_ratio": station.get("availability_ratio"),
-            "availability": availability,
-            "marker_color": marker_color,
-            "latitude": station.get("lat"),
-            "longitude": station.get("lon"),
+            "station_id": station.station_id,
+            "station_name": station.station_name,
+            "distance_km": station.distance_km,
+            "parking_bike_total_count": station.parking_bike_total_count,
+            "rack_total_count": station.rack_total_count,
+            "shared": station.shared,
+            "availability_ratio": station.availability_ratio,
+            "marker_color": station.marker_color,
+            "latitude": station.lat,
+            "longitude": station.lon,
         }
 
     @property
     def entity_picture(self):
+
         station = self._get_station()
-        return build_marker_svg(station.get("bikes"))
 
-    def _get_station(self):
-        data = self.coordinator.data or {}
-        stations = data.get("top_stations", [])
-
-        for s in stations:
-            if s.get("station_id") == self._station_id:
-                return s
-
-        return self._station or {}
+        return station.marker_svg if station else None

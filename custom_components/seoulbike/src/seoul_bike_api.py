@@ -76,9 +76,9 @@ class SeoulBikeApi(SeoulApi):
                     "station_name": s.get("stationName"),
                     "lat": float(s.get("stationLatitude", 0)),
                     "lon": float(s.get("stationLongitude", 0)),
-                    "bikes": int(s.get("parkingBikeTotCnt", 0)),
-                    "racks": int(s.get("rackTotCnt", 0)),
-                    "availability_ratio": int(s.get("shared", 0)),
+                    "parking_bike_total_count": int(s.get("parkingBikeTotCnt", 0)),
+                    "rack_total_count": int(s.get("rackTotCnt", 0)),
+                    "shared": int(s.get("shared", 0)),
                 }
                 for s in rows
                 if isinstance(s, dict)

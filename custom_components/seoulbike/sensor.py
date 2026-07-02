@@ -39,7 +39,7 @@ class SeoulBikeNearestStation(CoordinatorEntity, SensorEntity):
         if not nearest:
             return None
 
-        return nearest.get("station_name")
+        return nearest.station_name
 
     @property
     def extra_state_attributes(self):
@@ -51,13 +51,15 @@ class SeoulBikeNearestStation(CoordinatorEntity, SensorEntity):
             return {}
 
         return {
-            "station_id": nearest.get("station_id"),
-            "station_name": nearest.get("station_name"),
-            "lat": nearest.get("lat"),
-            "lon": nearest.get("lon"),
-            "distance_km": nearest.get("distance_km"),
-            "bikes": nearest.get("bikes"),
-            "racks": nearest.get("racks"),
+            "station_id": nearest.station_id,
+            "station_name": nearest.station_name,
+            "lat": nearest.lat,
+            "lon": nearest.lon,
+            "distance_km": nearest.distance_km,
+            "parking_bike_total_count": nearest.parking_bike_total_count,
+            "rack_total_count": nearest.rack_total_count,
+            "shared": nearest.shared,
+            "availability_ratio": nearest.availability_ratio,
         }
 
 
@@ -87,19 +89,19 @@ class SeoulBikeNearbyStations(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data or {}
         top = data.get("top_stations", [])
 
-        cleaned = []
-
-        for s in top:
-            cleaned.append({
-                "station_id": s.get("station_id"),
-                "station_name": s.get("station_name"),
-                "lat": s.get("lat"),
-                "lon": s.get("lon"),
-                "distance_km": s.get("distance_km"),
-                "bikes": s.get("bikes"),
-                "racks": s.get("racks"),
-            })
-
         return {
-            "stations": cleaned
+            "stations": [
+                {
+                    "station_id": station.station_id,
+                    "station_name": station.station_name,
+                    "lat": station.lat,
+                    "lon": station.lon,
+                    "distance_km": station.distance_km,
+                    "parking_bike_total_count": station.parking_bike_total_count,
+                    "rack_total_count": station.rack_total_count,
+                    "shared": station.shared,
+                    "availability_ratio": station.availability_ratio,
+                }
+                for station in top
+            ]
         }

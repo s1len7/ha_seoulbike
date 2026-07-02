@@ -5,6 +5,7 @@ from homeassistant.util.location import distance
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN, DEFAULT_RADIUS_KM, DEFAULT_TOP_N
+from .src.seoulbike_station import SeoulBikeStation
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,10 +48,7 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"[SeoulBike] Home out of range: lat={lat}, lon={lon}")
             return None
 
-        return {
-            "lat": lat,
-            "lon": lon,
-        }
+        return {"lat": lat, "lon": lon}
 
     def _validate_station(self, station):
 
@@ -62,16 +60,20 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
             _LOGGER.warning(
-                f"[SeoulBike] Invalid coord skipped: "
-                f"name={station.get('station_name')}, lat={lat}, lon={lon}"
+                f"[SeoulBike] Invalid coord skipped: name={station.get('station_name')}, lat={lat}, lon={lon}"
             )
             return None
 
-        station["lat"] = lat
-        station["lon"] = lon
-        station["station_id"] = station.pop("station_id", None)
-
-        return station
+        return SeoulBikeStation(
+            station_id=station["station_id"],
+            station_name=station["station_name"],
+            lat=lat,
+            lon=lon,
+            rack_total_count=int(station["rack_total_count"]),
+            parking_bike_total_count=int(station["parking_bike_total_count"]),
+            shared=int(station["shared"]),
+            # availability_ratio=float(station["availability_ratio"]),
+        )
 
     async def _async_update_data(self):
 
@@ -89,6 +91,7 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
                 "stations": [],
                 "top_stations": [],
                 "nearest": None,
+                "stations_by_id": {},
             }
 
         enriched = []
@@ -104,18 +107,19 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
                 dist = distance(
                     home["lat"],
                     home["lon"],
-                    station["lat"],
-                    station["lon"],
-                ) / 1000.
-
-                if dist <= self.radius_km:
-                    station["distance_km"] = dist
-                    enriched.append(station)
+                    station.lat,
+                    station.lon,
+                ) / 1000.0
 
             except Exception as e:
                 _LOGGER.debug(f"[SeoulBike] Distance calculation failed: {e}")
+                continue
 
-        enriched.sort(key=lambda x: x["distance_km"])
+            if dist <= self.radius_km:
+                station.distance_km = dist
+                enriched.append(station)
+
+        enriched.sort(key=lambda x: x.distance_km)
 
         _LOGGER.warning(
             f"📍 filtered stations: {len(enriched)} / top_n={self.top_n}"
@@ -125,11 +129,11 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
             "stations": enriched,
             "top_stations": enriched[: self.top_n],
             "nearest": enriched[0] if enriched else None,
+            "stations_by_id": {s.station_id: s for s in enriched},
         }
 
         _LOGGER.warning(
-            f"✅ SeoulBike update done: stations={len(enriched)} nearest="
-            f"{enriched[0]['station_name'] if enriched else None}"
+            f"✅ SeoulBike update done: stations={len(enriched)} nearest={enriched[0].station_name if enriched else None}"
         )
 
         return result
