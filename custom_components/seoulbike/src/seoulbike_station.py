@@ -12,7 +12,7 @@ class SeoulBikeStation:
     rack_total_count: int
     parking_bike_total_count: int
     shared: int
-    distance_km: float = 0.0
+    distance_km: float = 0.0  # runtime value
 
     @property
     def availability_ratio(self) -> float | None:

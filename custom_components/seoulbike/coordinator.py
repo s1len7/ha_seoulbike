@@ -72,7 +72,6 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
             rack_total_count=int(station["rack_total_count"]),
             parking_bike_total_count=int(station["parking_bike_total_count"]),
             shared=int(station["shared"]),
-            # availability_ratio=float(station["availability_ratio"]),
         )
 
     async def _async_update_data(self):
