@@ -10,8 +10,7 @@ venv/
 .vscode/settings.json
 
 # Home Assistant
+.env
 .storage/
 .vscode/keybindings.json
 
-# silent
-.silent/
