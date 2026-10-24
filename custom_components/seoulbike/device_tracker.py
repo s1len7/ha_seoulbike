@@ -1,100 +1,59 @@
-from homeassistant.components.device_tracker import TrackerEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.components.device_tracker import SourceType, TrackerEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, SUBENTRY_TYPE_STATION
+from .entity import SeoulBikeEntity, async_setup_station_entities, station_attributes
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
 
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
-    entities = {}
-
-    def create_entities():
-
-        data = coordinator.data or {}
-        stations = data.get("top_stations", [])
-
-        new_entities = []
-
-        for station in stations:
-
-            station_id = station.station_id
-
-            if station_id in entities:
-                continue
-
-            entity = SeoulBikeTracker(coordinator, station_id)
-            entities[station_id] = entity
-            new_entities.append(entity)
-
-        if new_entities:
-            async_add_entities(new_entities)
-
-    create_entities()
-    coordinator.async_add_listener(create_entities)
+    async_setup_station_entities(
+        coordinator, entry, async_add_entities, SeoulBikeTracker
+    )
 
 
-class SeoulBikeTracker(CoordinatorEntity, TrackerEntity):
+class SeoulBikeTracker(SeoulBikeEntity, TrackerEntity):
 
-    def __init__(self, coordinator, station_id):
+    _attr_icon = "mdi:bicycle"
+    _attr_source_type = SourceType.GPS
 
-        super().__init__(coordinator)
+    def __init__(self, coordinator, subentry, station_id):
 
-        self._station_id = station_id
+        super().__init__(coordinator, subentry, station_id)
 
-        station = self._get_station()
+        self._attr_unique_id = f"{subentry.subentry_id}_{station_id}"
 
-        self._attr_unique_id = f"{DOMAIN}.device_tracker.{station_id}"
-        self._attr_name = station.station_name if station else None
-        self._attr_icon = "mdi:bicycle"
-        self._attr_source_type = "gps"
-
-    def _get_station(self):
-
-        data = self.coordinator.data or {}
-
-        return data.get("stations_by_id", {}).get(self._station_id)
+        # 대여소 하위 항목은 기기 이름(대여소 이름)을 그대로 씀
+        if subentry.subentry_type == SUBENTRY_TYPE_STATION:
+            self._attr_name = None
+            self._suggest_entity_id("device_tracker")
+        else:
+            station = self.station
+            self._attr_name = station.station_name if station else station_id
+            self._suggest_entity_id("device_tracker", self._station_key(station_id))
 
     @property
     def latitude(self):
-        station = self._get_station()
+        station = self.station
         return station.lat if station else None
 
     @property
     def longitude(self):
-        station = self._get_station()
+        station = self.station
         return station.lon if station else None
 
     @property
     def state(self):
-        station = self._get_station()
+        station = self.station
         return station.parking_bike_total_count if station else 0
 
     @property
     def extra_state_attributes(self):
-
-        station = self._get_station()
-
-        if not station:
-            return {}
-
-        return {
-            "station_id": station.station_id,
-            "station_name": station.station_name,
-            "distance_km": station.distance_km,
-            "parking_bike_total_count": station.parking_bike_total_count,
-            "rack_total_count": station.rack_total_count,
-            "shared": station.shared,
-            "availability_ratio": station.availability_ratio,
-            "marker_color": station.marker_color,
-            "latitude": station.lat,
-            "longitude": station.lon,
-        }
+        station = self.station
+        return station_attributes(station, self.distance_km) if station else {}
 
     @property
     def entity_picture(self):
-
-        station = self._get_station()
-
+        station = self.station
         return station.marker_svg if station else None

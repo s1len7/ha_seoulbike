@@ -4,7 +4,7 @@
 
 import logging
 
-from .seoul_api import SeoulApi
+from .seoul_api import SeoulApi, SeoulApiAuthError, SeoulApiError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,60 +15,63 @@ class SeoulBikeApi(SeoulApi):
     SERVICE = "bikeList"
 
     async def validate_api_key(self) -> bool:
-        """Validate Seoul OpenAPI key."""
+        """Validate Seoul OpenAPI key.
 
-        data = await self._request(
-            service=self.SERVICE,
-            start=1,
-            end=5,
-            timeout=10,
-        )
+        Raises SeoulApiError when the server cannot be reached.
+        """
 
-        if data is None:
+        try:
+            data = await self._request(
+                service=self.SERVICE,
+                start=1,
+                end=5,
+                timeout=10,
+            )
+        except SeoulApiAuthError:
             return False
 
         bike_data = data.get("rentBikeStatus")
         if not bike_data:
-            _LOGGER.error("API response missing 'rentBikeStatus'")
-            return False
+            raise SeoulApiError(
+                f"API response missing 'rentBikeStatus': {data.get('RESULT')}"
+            )
 
         result = bike_data.get("RESULT", {})
         code = result.get("CODE")
         message = result.get("MESSAGE")
 
         if code != "INFO-000":
-            _LOGGER.error(f"API key validation failed: {code} ({message})")
-            return False
+            raise SeoulApiError(f"API error: {code} ({message})")
 
         return True
 
     async def get_all_stations(self) -> list[dict]:
-        """Get all bike stations."""
+        """Get all bike stations.
+
+        Raises SeoulApiError on request failure or invalid response.
+        """
 
         stations: list[dict] = []
 
         pages = await self.request_all(self.SERVICE)
-        if not pages:
-            return []
 
         for data in pages:
             bike_data = data.get("rentBikeStatus")
             if not bike_data:
-                _LOGGER.error("API response missing 'rentBikeStatus'")
-                return []
+                raise SeoulApiError(
+                    f"API response missing 'rentBikeStatus': {data.get('RESULT')}"
+                )
 
             result = bike_data.get("RESULT", {})
             code = result.get("CODE")
             message = result.get("MESSAGE")
 
             if code != "INFO-000":
-                _LOGGER.error(f"API error: {code} ({message})")
-                return []
+                raise SeoulApiError(f"API error: {code} ({message})")
 
             rows = bike_data.get("row")
             if not isinstance(rows, list):
-                _LOGGER.error("API response 'rentBikeStatus.row' is not a list")
-                return []
+                raise SeoulApiError("API response 'rentBikeStatus.row' is not a list")
 
             stations.extend(
                 {

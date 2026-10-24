@@ -1,6 +1,10 @@
+import re
 from dataclasses import dataclass
 
 from .marker import build_marker_svg, get_availability_marker
+
+# 대여소 이름 앞의 번호 ("5778. 북위례3" → "5778")
+_STATION_NUMBER_RE = re.compile(r"^\s*(\d+)\s*\.")
 
 
 @dataclass(slots=True)
@@ -12,7 +16,11 @@ class SeoulBikeStation:
     rack_total_count: int
     parking_bike_total_count: int
     shared: int
-    distance_km: float = 0.0  # runtime value
+
+    @property
+    def station_number(self) -> str | None:
+        match = _STATION_NUMBER_RE.match(self.station_name or "")
+        return match.group(1) if match else None
 
     @property
     def availability_ratio(self) -> float | None:
@@ -23,7 +31,7 @@ class SeoulBikeStation:
 
     @property
     def marker_color(self) -> str:
-        return get_availability_marker(self.availability_ratio)[0]
+        return get_availability_marker(self.availability_ratio)
 
     @property
     def marker_svg(self) -> str:

@@ -3,17 +3,87 @@
     "step": {
       "user": {
         "title": "서울 공공자전거 설정",
-        "description": "서울 열린데이터광장 API Key를 입력하세요.\n※ 신청: https://data.seoul.go.kr/together/mypage/actkeyMain.do",
+        "description": "서울 열린데이터광장 API Key를 입력하세요.\n※ 신청: https://data.seoul.go.kr/together/mypage/actkeyMain.do\n\n설정이 끝나면 통합 화면에서 대여소나 지역을 추가하세요.",
         "data": {
-          "seoul_api_key": "서울 열린데이터광장 API Key",
-          "radius_km": "검색 반경 (km) - 현재 위치 기준 가까운 대여소 탐색 범위",
-          "top_n": "탐색할 가까운 대여소 수 최대값"
+          "seoul_api_key": "서울 열린데이터광장 API Key"
+        }
+      },
+      "reauth_confirm": {
+        "title": "API Key 재인증",
+        "description": "API Key가 더 이상 유효하지 않습니다. 새 API Key를 입력하세요.",
+        "data": {
+          "seoul_api_key": "서울 열린데이터광장 API Key"
+        }
+      },
+      "reconfigure": {
+        "title": "API Key 변경",
+        "description": "새 API Key를 입력하세요. 추가한 대여소·지역은 그대로 유지됩니다.",
+        "data": {
+          "seoul_api_key": "서울 열린데이터광장 API Key"
         }
       }
     },
     "error": {
       "invalid_api_key": "서울 열린데이터광장 API Key가 올바르지 않습니다.",
-      "unsupported_region": "현재 Home Assistant 위치 주변에는 서울 공공자전거 대여소가 없습니다."
+      "cannot_connect": "서울 열린데이터광장 서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요."
+    },
+    "abort": {
+      "already_configured": "따릉이 통합이 이미 등록되어 있습니다.",
+      "reauth_successful": "API Key를 변경했습니다.",
+      "reconfigure_successful": "API Key를 변경했습니다."
+    }
+  },
+  "config_subentries": {
+    "station": {
+      "step": {
+        "user": {
+          "title": "대여소 추가",
+          "description": "대여소 이름이나 번호로 검색해 선택하세요. 집에서 가까운 순으로 정렬되어 있습니다.",
+          "data": {
+            "station_id": "대여소"
+          }
+        }
+      },
+      "abort": {
+        "already_configured": "이미 추가된 대여소입니다.",
+        "entry_not_loaded": "따릉이 통합이 로드되지 않아 대여소 목록을 가져올 수 없습니다.",
+        "station_not_found": "선택한 대여소를 찾을 수 없습니다. 다시 시도하세요."
+      },
+      "initiate_flow": {
+        "user": "대여소 추가"
+      },
+      "entry_type": "대여소"
+    },
+    "zone": {
+      "step": {
+        "user": {
+          "title": "지역 추가",
+          "description": "선택한 지역 주변의 대여소를 가까운 순으로 자동으로 찾습니다.",
+          "data": {
+            "zone_id": "지역",
+            "radius_km": "검색 반경",
+            "top_n": "최대 대여소 수"
+          }
+        },
+        "reconfigure": {
+          "title": "지역 재구성",
+          "description": "선택한 지역 주변의 대여소를 가까운 순으로 자동으로 찾습니다.",
+          "data": {
+            "zone_id": "지역",
+            "radius_km": "검색 반경",
+            "top_n": "최대 대여소 수"
+          }
+        }
+      },
+      "abort": {
+        "already_configured": "이미 추가된 지역입니다.",
+        "reconfigure_successful": "지역 설정을 변경했습니다."
+      },
+      "initiate_flow": {
+        "user": "지역 추가",
+        "reconfigure": "지역 재구성"
+      },
+      "entry_type": "지역"
     }
   }
 }

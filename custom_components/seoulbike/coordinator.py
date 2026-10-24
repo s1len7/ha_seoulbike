@@ -1,28 +1,28 @@
 import logging
 from datetime import timedelta
 
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.util.location import distance
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, DEFAULT_RADIUS_KM, DEFAULT_TOP_N
+from .const import DOMAIN
+from .src.seoul_api import SeoulApiAuthError, SeoulApiError
 from .src.seoulbike_station import SeoulBikeStation
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class SeoulBikeCoordinator(DataUpdateCoordinator):
+    """전체 대여소를 한 번에 받아 모든 하위 항목이 함께 쓴다."""
 
-    def __init__(self, hass, api_client, radius_km=DEFAULT_RADIUS_KM, top_n=DEFAULT_TOP_N):
+    def __init__(self, hass, config_entry, api_client):
 
-        self.hass = hass
         self.api_client = api_client
-
-        self.radius_km = float(radius_km)
-        self.top_n = int(top_n)
 
         super().__init__(
             hass,
             logger=_LOGGER,
+            config_entry=config_entry,
             name=DOMAIN,
             update_interval=timedelta(seconds=60),
         )
@@ -35,21 +35,6 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
         except (TypeError, ValueError):
             return None
 
-    def _get_home(self):
-
-        lat = self._normalize_coord(self.hass.config.latitude)
-        lon = self._normalize_coord(self.hass.config.longitude)
-
-        if lat is None or lon is None:
-            _LOGGER.error(f"[SeoulBike] Home coordinate is invalid")
-            return None
-
-        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-            _LOGGER.error(f"[SeoulBike] Home out of range: lat={lat}, lon={lon}")
-            return None
-
-        return {"lat": lat, "lon": lon}
-
     def _validate_station(self, station):
 
         lat = self._normalize_coord(station.get("lat"))
@@ -59,7 +44,7 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
             return None
 
         if not (-90 <= lat <= 90 and -180 <= lon <= 180):
-            _LOGGER.warning(
+            _LOGGER.debug(
                 f"[SeoulBike] Invalid coord skipped: name={station.get('station_name')}, lat={lat}, lon={lon}"
             )
             return None
@@ -76,63 +61,76 @@ class SeoulBikeCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
 
-        _LOGGER.warning(f"🚲 SeoulBike update started")
+        try:
+            stations = await self.api_client.get_all_stations()
+        except SeoulApiAuthError as err:
+            # HA가 "재인증 필요" 알림을 띄움
+            raise ConfigEntryAuthFailed(str(err)) from err
+        except SeoulApiError as err:
+            raise UpdateFailed(str(err)) from err
 
-        stations = await self.api_client.get_all_stations()
-
-        _LOGGER.warning(f"📡 stations fetched: {len(stations)}")
-
-        home = self._get_home()
-
-        if not home:
-            _LOGGER.error(f"[SeoulBike] Home not configured")
-            return {
-                "stations": [],
-                "top_stations": [],
-                "nearest": None,
-                "stations_by_id": {},
-            }
-
-        enriched = []
+        stations_by_id = {}
 
         for station in stations:
 
             station = self._validate_station(station)
 
-            if not station:
-                continue
+            if station:
+                stations_by_id[station.station_id] = station
 
-            try:
-                dist = distance(
-                    home["lat"],
-                    home["lon"],
-                    station.lat,
-                    station.lon,
-                ) / 1000.0
+        _LOGGER.debug(f"stations fetched: {len(stations)}, valid: {len(stations_by_id)}")
 
-            except Exception as e:
-                _LOGGER.debug(f"[SeoulBike] Distance calculation failed: {e}")
-                continue
+        return {"stations_by_id": stations_by_id}
 
-            if dist <= self.radius_km:
-                station.distance_km = dist
-                enriched.append(station)
+    def get_station(self, station_id):
 
-        enriched.sort(key=lambda x: x.distance_km)
+        data = self.data or {}
 
-        _LOGGER.warning(
-            f"📍 filtered stations: {len(enriched)} / top_n={self.top_n}"
-        )
+        return data.get("stations_by_id", {}).get(station_id)
 
-        result = {
-            "stations": enriched,
-            "top_stations": enriched[: self.top_n],
-            "nearest": enriched[0] if enriched else None,
-            "stations_by_id": {s.station_id: s for s in enriched},
-        }
+    def get_zone_location(self, zone_id):
+        """지역(zone) 엔티티의 좌표. 지역이 없거나 좌표가 없으면 None."""
 
-        _LOGGER.warning(
-            f"✅ SeoulBike update done: stations={len(enriched)} nearest={enriched[0].station_name if enriched else None}"
-        )
+        state = self.hass.states.get(zone_id)
 
-        return result
+        if state is None:
+            return None
+
+        lat = self._normalize_coord(state.attributes.get("latitude"))
+        lon = self._normalize_coord(state.attributes.get("longitude"))
+
+        if lat is None or lon is None:
+            return None
+
+        return lat, lon
+
+    def distance_km(self, zone_id, station):
+
+        location = self.get_zone_location(zone_id)
+
+        if location is None or station is None:
+            return None
+
+        return distance(location[0], location[1], station.lat, station.lon) / 1000.0
+
+    def find_nearby(self, zone_id, radius_km, top_n):
+        """지역 기준 반경 안의 대여소를 가까운 순으로 top_n개. [(대여소, 거리km)]"""
+
+        location = self.get_zone_location(zone_id)
+
+        if location is None:
+            return []
+
+        data = self.data or {}
+        nearby = []
+
+        for station in data.get("stations_by_id", {}).values():
+
+            dist = distance(location[0], location[1], station.lat, station.lon) / 1000.0
+
+            if dist <= radius_km:
+                nearby.append((station, dist))
+
+        nearby.sort(key=lambda item: item[1])
+
+        return nearby[:top_n]

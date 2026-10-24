@@ -3,5 +3,6 @@
   "content_in_root": false,
   "render_readme": true,
   "country": "KR",
-  "description": "Home Assistant custom integration for Seoul Bike (따릉이)."
+  "description": "Home Assistant custom integration for Seoul Bike (따릉이).",
+  "homeassistant": "2026.6.0"
 }

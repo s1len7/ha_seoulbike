@@ -1,75 +1,115 @@
 import logging
-import debugpy
+from types import MappingProxyType
 
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.loader import async_get_integration
+from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .const import DOMAIN, DEFAULT_RADIUS_KM, DEFAULT_TOP_N, CONF_API_KEY
+from .const import (
+    DOMAIN,
+    CONF_API_KEY,
+    CONF_RADIUS_KM,
+    CONF_TOP_N,
+    CONF_ZONE_ID,
+    DEFAULT_RADIUS_KM,
+    DEFAULT_TOP_N,
+    SUBENTRY_TYPE_ZONE,
+    ZONE_HOME,
+)
 from .coordinator import SeoulBikeCoordinator
 from .src.seoul_bike_api import SeoulBikeApi
 
 _LOGGER = logging.getLogger(__name__)
 
+PLATFORMS = ["sensor", "device_tracker", "geo_location"]
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    integration = await async_get_integration(hass, DOMAIN)
-    _LOGGER.warning(f"🚲 SeoulBike v{integration.version} integration started (async_setup_entry)")
 
-    # 🐞 DEBUGPY ATTACH (2015)
-    try:
-        debugpy.listen(("0.0.0.0", 2015))
-        # debugpy.wait_for_client()
-        _LOGGER.warning("🐞 Debugger listening on port 2015")
-    except Exception as e:
-        _LOGGER.debug(f"Debugpy already started or failed: {e}")
+    # 1️⃣ API + Coordinator 생성 (모든 하위 항목이 함께 씀)
+    api = SeoulBikeApi(entry.data[CONF_API_KEY], async_get_clientsession(hass))
 
-    # 1️⃣ API key
-    api_key = entry.data[CONF_API_KEY]
+    coordinator = SeoulBikeCoordinator(hass, entry, api)
 
-    # 2️⃣ 설정값
-    radius_km = float(entry.data.get("radius_km", DEFAULT_RADIUS_KM))
-    top_n = int(entry.data.get("top_n", DEFAULT_TOP_N))
-
-    # 3️⃣ API + Coordinator 생성
-    api = SeoulBikeApi(api_key)
-
-    coordinator = SeoulBikeCoordinator(
-        hass=hass,
-        api_client=api,
-        radius_km=radius_km,
-        top_n=top_n,
-    )
-
-    # 4️⃣ 최초 데이터 로딩
+    # 2️⃣ 최초 데이터 로딩
     await coordinator.async_config_entry_first_refresh()
 
-    # 5️⃣ hass.data 저장
+    # 3️⃣ hass.data 저장
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         "coordinator": coordinator,
     }
 
-    # 6️⃣ platforms 등록
-    await hass.config_entries.async_forward_entry_setups(
-        entry,
-        ["sensor", "device_tracker", "geo_location"]
-    )
+    # 4️⃣ platforms 등록
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    _LOGGER.warning("🚲 SeoulBike setup completed")
+    # 5️⃣ API 키 변경, 하위 항목 추가·변경·삭제 시 다시 로드
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+
+    _LOGGER.debug("SeoulBike setup completed")
 
     return True
 
 
+async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry):
+
+    await hass.config_entries.async_reload(entry.entry_id)
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
-    _LOGGER.warning("🚲 SeoulBike unloading")
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-    await hass.config_entries.async_unload_platforms(
-        entry,
-        ["sensor", "device_tracker", "geo_location"]
-    )
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id, None)
 
-    hass.data[DOMAIN].pop(entry.entry_id, None)
+    return unload_ok
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry):
+
+    if entry.version > 2:
+        # 더 새 버전에서 만든 설정은 읽을 수 없음
+        return False
+
+    if entry.version == 1:
+        # 1 → 2: 반경·대여소 수 설정을 "집" 지역 하위 항목으로 옮김
+        settings = {**entry.data, **entry.options}
+
+        hass.config_entries.async_add_subentry(
+            entry,
+            ConfigSubentry(
+                data=MappingProxyType(
+                    {
+                        CONF_ZONE_ID: ZONE_HOME,
+                        CONF_RADIUS_KM: float(
+                            settings.get(CONF_RADIUS_KM, DEFAULT_RADIUS_KM)
+                        ),
+                        CONF_TOP_N: int(settings.get(CONF_TOP_N, DEFAULT_TOP_N)),
+                    }
+                ),
+                subentry_type=SUBENTRY_TYPE_ZONE,
+                title=hass.config.location_name,
+                unique_id=ZONE_HOME,
+            ),
+        )
+
+        # 옛 형식 unique_id의 엔티티는 하위 항목 엔티티로 대체되므로 삭제
+        entity_registry = er.async_get(hass)
+        for entity in er.async_entries_for_config_entry(
+            entity_registry, entry.entry_id
+        ):
+            entity_registry.async_remove(entity.entity_id)
+
+        hass.config_entries.async_update_entry(
+            entry,
+            data={CONF_API_KEY: entry.data[CONF_API_KEY]},
+            options={},
+            unique_id=DOMAIN,
+            version=2,
+        )
+
+        _LOGGER.debug("SeoulBike config entry migrated to version 2")
 
     return True
