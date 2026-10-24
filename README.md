@@ -151,7 +151,3 @@ logger:
 
 문제가 있으면 [GitHub 이슈](https://github.com/s1len7/ha_seoulbike/issues)에 로그와 함께 남겨 주세요.
 로그를 올리기 전에 API 키가 들어 있지 않은지 확인해 주세요.
-
-## 개발
-
-구조, 개발 환경, 디버깅은 [docs/development.md](docs/development.md)를 참고하세요.

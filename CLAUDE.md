@@ -68,7 +68,34 @@
 서울시 공공자전거 실시간 대여정보 API로 집 주변 대여소의 자전거 수를 보여주는 HACS 커스텀 통합.
 저장소: https://github.com/s1len7/ha_seoulbike (공개)
 
-구조, 개발 환경, 디버깅 설정은 `docs/development.md`에 있다.
+### 구조
+
+```text
+custom_components/seoulbike/
+├── manifest.json        # 도메인·버전의 단일 출처 (const.py가 읽어감)
+├── const.py             # 설정 키, 하위 항목 종류, 기본값
+├── __init__.py          # 설정 항목 로드/언로드, 플랫폼 등록, 버전 마이그레이션
+├── config_flow.py       # API 키 입력·재인증·재구성, 하위 항목(대여소/지역) 추가
+├── coordinator.py       # 60초마다 전체 대여소 조회 (모든 하위 항목이 공유), 거리·주변 탐색
+├── entity.py            # 하위 항목 공통 엔티티(기기 하나), 대여소 속성, 지도 엔티티 등록
+├── sensor.py            # 대여소: 대여 가능·거치대·거리 / 지역: 가장 가까운·주변 대여소
+├── device_tracker.py    # 대여소 지도 표시 (state = 자전거 수)
+├── geo_location.py      # 대여소 지도 표시 (state = 거리 km, 고정)
+├── src/
+│   ├── seoul_api.py         # 서울 열린데이터광장 공통 클라이언트, SeoulApiError·SeoulApiAuthError
+│   ├── seoul_bike_api.py    # bikeList 서비스 (따릉이)
+│   ├── seoulbike_station.py # 대여소 데이터 클래스
+│   └── marker.py            # 지도 마커 SVG
+└── translations/ko.json # 설정 화면·에러 문구
+```
+
+설정 항목 하나가 API 키를 갖고, 대여소·지역은 그 아래 하위 항목(config subentry)으로 추가한다.
+
+```text
+SeoulBike (설정 항목: API 키)
+ ├─ 대여소 하위 항목: 대여소 하나 고정 (거리 기준은 zone.home)
+ └─ 지역 하위 항목: 지역(zone) 주변 반경 안의 대여소를 가까운 순으로 자동 탐색
+```
 
 ### 외부에서 참조하는 식별자
 
@@ -106,7 +133,54 @@
 
 ### 개발 환경
 
-- 코드를 고친 뒤에는 개발용 HA(`docs/development.md`의 `## 개발 환경`)에서 직접 확인할 것
+개발용 Home Assistant는 Docker 컨테이너 `ha-dev`로 돌아가고, 이 저장소의 통합 폴더가 컨테이너에 그대로 연결돼 있다 (복사 없이 바로 반영).
+VS Code 작업(`.vscode/tasks.json`)은 저장소 옆의 `ha-dev` 폴더를 사용한다.
+
+```text
+~/
+├── ha_seoulbike/   # 이 저장소
+└── ha-dev/
+    ├── docker-compose.yml
+    └── config/     # HA 설정 폴더 (컨테이너 /config)
+```
+
+`ha-dev/docker-compose.yml`:
+
+```yaml
+services:
+  homeassistant:
+    container_name: ha-dev
+    image: ghcr.io/home-assistant/home-assistant:stable
+    ports:
+      - "8123:8123"
+      - "2015:2015"   # 디버거
+    privileged: true
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Seoul
+    volumes:
+      - ./config:/config
+      - ../ha_seoulbike/custom_components/seoulbike:/config/custom_components/seoulbike
+```
+
+| 항목 | 값 |
+|---|---|
+| 웹 UI | http://localhost:8123 |
+| 로그 | `ha-dev/config/home-assistant.log` (`logger`에서 `custom_components.seoulbike: debug` 설정됨) |
+| 엔티티 등록 정보 | `ha-dev/config/.storage/core.entity_registry` |
+| 엔티티 상태 기록 | `ha-dev/config/home-assistant_v2.db` (recorder) |
+| HA 소스 (컨테이너 안) | `/usr/src/homeassistant/homeassistant/` |
+
+```bash
+cd ~/ha-dev
+docker compose up -d                          # 시작 (VS Code 작업: HA Start)
+docker compose restart homeassistant          # 코드 수정 후 반영 (HA Restart)
+docker compose logs --since 5m homeassistant 2>&1 | grep -i seoulbike   # (HA Logs)
+```
+
+Docker는 Windows의 Docker Desktop이고, WSL에서 `docker` 명령을 쓰려면 Docker Desktop 설정에서 WSL 통합이 켜져 있어야 한다.
+
+- 코드를 고친 뒤에는 이 개발용 HA에서 직접 확인할 것
 - `docker` 명령이 응답하지 않으면 Docker Desktop이 꺼진 것이므로 사용자에게 켜달라고 요청할 것
 - HA 내부 동작(기본 클래스의 `@final`, state 계산 방식 등)은 추측하지 말고 컨테이너 안의 HA 소스에서 확인할 것
 - 엔티티의 현재 상태·속성은 recorder DB의 `states` 테이블에서 확인할 것
@@ -132,7 +206,12 @@
 ### 디버깅
 
 - 코드에 `debugpy`를 import하지 말 것. 다른 사용자 환경에는 debugpy가 없어 통합 로드가 실패하고, 있으면 원격 코드 실행 포트가 열린다
-  - 디버깅은 HA 내장 디버거 통합으로 한다 (설정은 `docs/development.md`의 `## 디버깅`)
+- 디버깅은 HA 내장 디버거 통합으로 한다. 개발용 HA의 `configuration.yaml`에 아래를 넣고 재시작한 뒤, VS Code의 **Attach HA Debug**(`.vscode/launch.json`)로 접속한다
+  ```yaml
+  debugpy:
+    host: 0.0.0.0
+    port: 2015
+  ```
 
 
 <!--
