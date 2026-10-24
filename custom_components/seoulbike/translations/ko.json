@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "서울 공공자전거 설정",
-        "description": "서울 열린데이터광장 API Key를 입력하세요.\n※ 신청: https://data.seoul.go.kr/together/mypage/actkeyMain.do\n\n설정이 끝나면 통합 화면에서 대여소나 지역을 추가하세요.",
+        "description": "서울 열린데이터광장 API Key를 입력하세요.\n※ 신청: {api_key_url}\n\n설정이 끝나면 통합 화면에서 대여소나 지역을 추가하세요.",
         "data": {
           "seoul_api_key": "서울 열린데이터광장 API Key"
         }
@@ -44,10 +44,12 @@
           }
         }
       },
+      "error": {
+        "invalid_station": "목록에서 대여소를 선택하세요."
+      },
       "abort": {
         "already_configured": "이미 추가된 대여소입니다.",
-        "entry_not_loaded": "따릉이 통합이 로드되지 않아 대여소 목록을 가져올 수 없습니다.",
-        "station_not_found": "선택한 대여소를 찾을 수 없습니다. 다시 시도하세요."
+        "entry_not_loaded": "따릉이 통합이 로드되지 않아 대여소 목록을 가져올 수 없습니다."
       },
       "initiate_flow": {
         "user": "대여소 추가"

@@ -3,6 +3,8 @@
 설정 항목은 API 키만 갖고, 대여소·지역은 하위 항목으로 추가한다.
 """
 
+import re
+
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
@@ -29,6 +31,12 @@ from .src.seoul_api import SeoulApiError
 from .src.seoul_bike_api import SeoulBikeApi
 
 API_KEY_SCHEMA = vol.Schema({vol.Required(CONF_API_KEY): str})
+
+# 인증키 신청 페이지 (번역 문구에는 URL을 직접 쓸 수 없어 자리표시자로 넘김)
+API_KEY_URL = "https://data.seoul.go.kr/together/mypage/actkeyMain.do"
+
+# 대여소 선택 값 맨 앞의 번호 ("5778. 북위례3 (0.4km, 현재 12대)" 또는 "5778")
+_STATION_NUMBER_RE = re.compile(r"^\s*(\d+)")
 
 
 async def _async_validate_api_key(hass, api_key):
@@ -65,6 +73,7 @@ class SeoulBikeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=self.add_suggested_values_to_schema(API_KEY_SCHEMA, user_input),
             errors=errors,
+            description_placeholders={"api_key_url": API_KEY_URL},
         )
 
     async def async_step_reauth(self, entry_data):
@@ -126,27 +135,56 @@ class StationSubentryFlowHandler(config_entries.ConfigSubentryFlow):
 
         coordinator = runtime["coordinator"]
 
-        if user_input is not None:
-            station = coordinator.get_station(user_input[CONF_STATION_ID])
-            if station is None:
-                return self.async_abort(reason="station_not_found")
-            return self.async_create_entry(
-                title=station.station_name,
-                data={CONF_STATION_ID: station.station_id},
-                unique_id=station.station_id,
-            )
+        errors = {}
 
+        if user_input is not None:
+            station = self._find_station(coordinator, user_input[CONF_STATION_ID])
+            if station is None:
+                errors["base"] = "invalid_station"
+            else:
+                return self.async_create_entry(
+                    title=station.station_name,
+                    data={CONF_STATION_ID: station.station_id},
+                    unique_id=station.station_id,
+                )
+
+        # custom_value=True여야 검색 가능한 목록이 나온다 (False면 검색 없는 드롭다운)
         schema = vol.Schema(
             {
                 vol.Required(CONF_STATION_ID): selector.SelectSelector(
                     selector.SelectSelectorConfig(
                         options=self._station_options(coordinator),
                         mode=selector.SelectSelectorMode.DROPDOWN,
+                        custom_value=True,
                     )
                 )
             }
         )
-        return self.async_show_form(step_id="user", data_schema=schema)
+        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+
+    @staticmethod
+    def _find_station(coordinator, value):
+        """선택·입력한 값에서 대여소를 찾는다. 못 찾으면 None.
+
+        라벨의 자전거 대수는 1분마다 바뀌므로 라벨 전체가 아니라 번호로 찾는다.
+        """
+
+        stations = (coordinator.data or {}).get("stations_by_id", {}).values()
+        value = str(value).strip()
+
+        match = _STATION_NUMBER_RE.match(value)
+        if match:
+            for station in stations:
+                if station.station_number == match.group(1):
+                    return station
+
+        # 번호가 없는 대여소: 라벨 "이름 (거리, 현재 N대)"의 이름 부분으로 찾음
+        name = value.split(" (", 1)[0]
+        for station in stations:
+            if station.station_name == name:
+                return station
+
+        return None
 
     def _station_options(self, coordinator):
         """전체 대여소를 집에서 가까운 순으로. 라벨: 이름 (거리, 현재 대수)"""
@@ -162,14 +200,11 @@ class StationSubentryFlowHandler(config_entries.ConfigSubentryFlow):
 
         options = []
 
+        # 검색 가능한 목록은 선택 후 값을 그대로 보여주므로 값과 라벨을 같게 둔다
         for dist, station in items:
             dist_text = f"{dist:.1f}km, " if dist != float("inf") else ""
-            options.append(
-                selector.SelectOptionDict(
-                    value=station.station_id,
-                    label=f"{station.station_name} ({dist_text}현재 {station.parking_bike_total_count}대)",
-                )
-            )
+            label = f"{station.station_name} ({dist_text}현재 {station.parking_bike_total_count}대)"
+            options.append(selector.SelectOptionDict(value=label, label=label))
 
         return options
 

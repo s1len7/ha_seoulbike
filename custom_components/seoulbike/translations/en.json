@@ -1,0 +1,91 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Seoul Bike setup",
+        "description": "Enter your Seoul Open Data Plaza API key.\nGet a key: {api_key_url}\n\nAfter setup, add stations or zones from the integration page.",
+        "data": {
+          "seoul_api_key": "Seoul Open Data Plaza API key"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate API key",
+        "description": "The API key is no longer valid. Enter a new API key.",
+        "data": {
+          "seoul_api_key": "Seoul Open Data Plaza API key"
+        }
+      },
+      "reconfigure": {
+        "title": "Change API key",
+        "description": "Enter a new API key. Added stations and zones are kept.",
+        "data": {
+          "seoul_api_key": "Seoul Open Data Plaza API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_api_key": "The Seoul Open Data Plaza API key is invalid.",
+      "cannot_connect": "Unable to connect to the Seoul Open Data Plaza server. Try again later."
+    },
+    "abort": {
+      "already_configured": "Seoul Bike is already configured.",
+      "reauth_successful": "The API key has been updated.",
+      "reconfigure_successful": "The API key has been updated."
+    }
+  },
+  "config_subentries": {
+    "station": {
+      "step": {
+        "user": {
+          "title": "Add station",
+          "description": "Search by station name or number and select a station. Stations are sorted by distance from home.",
+          "data": {
+            "station_id": "Station"
+          }
+        }
+      },
+      "error": {
+        "invalid_station": "Select a station from the list."
+      },
+      "abort": {
+        "already_configured": "This station has already been added.",
+        "entry_not_loaded": "The Seoul Bike integration is not loaded, so the station list is unavailable."
+      },
+      "initiate_flow": {
+        "user": "Add station"
+      },
+      "entry_type": "Station"
+    },
+    "zone": {
+      "step": {
+        "user": {
+          "title": "Add zone",
+          "description": "Automatically finds the stations closest to the selected zone.",
+          "data": {
+            "zone_id": "Zone",
+            "radius_km": "Search radius",
+            "top_n": "Maximum number of stations"
+          }
+        },
+        "reconfigure": {
+          "title": "Reconfigure zone",
+          "description": "Automatically finds the stations closest to the selected zone.",
+          "data": {
+            "zone_id": "Zone",
+            "radius_km": "Search radius",
+            "top_n": "Maximum number of stations"
+          }
+        }
+      },
+      "abort": {
+        "already_configured": "This zone has already been added.",
+        "reconfigure_successful": "The zone settings have been updated."
+      },
+      "initiate_flow": {
+        "user": "Add zone",
+        "reconfigure": "Reconfigure zone"
+      },
+      "entry_type": "Zone"
+    }
+  }
+}
